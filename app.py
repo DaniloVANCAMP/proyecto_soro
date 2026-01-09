@@ -3,25 +3,26 @@ import pandas as pd
 import os
 from utils.calculos import procesar_datos
 from utils.pdf_generator import generar_pdf
+from utils.auth import autenticar, registrar_usuario, cargar_usuarios, guardar_usuarios
+from utils.google_sync import guardar_proyectos_google, cargar_proyectos_google
 
-
+# --------------------------------------------------------------------
 st.set_page_config(page_title="Control Obra", layout="wide")
 
-from utils.auth import autenticar, registrar_usuario, cargar_usuarios, guardar_usuarios
 # --- LOGIN / REGISTRO ---
 if "user" not in st.session_state:
     st.session_state.user = None
 
 if not st.session_state.user:
     st.markdown(
-    """
-    <div style='text-align:center; padding-top: 120px;'>
-        <h1 style='font-size: 28px; color:#004c91;'>🔐 Acceso al Control de Obra</h1>
-        <p style='color:#666;'>Por favor inicia sesión o crea tu cuenta</p>
-    </div>
-    """, unsafe_allow_html=True
-)
-
+        """
+        <div style='text-align:center; padding-top: 120px;'>
+            <h1 style='font-size: 28px; color:#004c91;'>🔐 Acceso al Control de Obra</h1>
+            <p style='color:#666;'>Por favor inicia sesión o crea tu cuenta</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     tab_login, tab_signup = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
 
@@ -40,8 +41,10 @@ if not st.session_state.user:
         new_pass = st.text_input("Contraseña Nueva", type="password")
         if st.button("Registrarse", use_container_width=True):
             ok, msg = registrar_usuario(new_email, new_pass)
-            if ok: st.success(msg)
-            else: st.warning(msg)
+            if ok:
+                st.success(msg)
+            else:
+                st.warning(msg)
 
     st.stop()
 
@@ -49,7 +52,7 @@ if not st.session_state.user:
 user_email = st.session_state.user
 st.sidebar.success(f"👤 {user_email}")
 
-# CSS
+# CSS -------------------------------------------------------------
 st.markdown("""
 <style>
     .block-container {padding-top: 1rem; padding-bottom: 2rem;}
@@ -61,63 +64,54 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# VARIABLES
-if "proyecto_items" not in st.session_state: st.session_state.proyecto_items = {}
-if "item_actual" not in st.session_state: st.session_state.item_actual = None
+# VARIABLES --------------------------------------------------------
+if "proyecto_items" not in st.session_state:
+    st.session_state.proyecto_items = cargar_proyectos_google(user_email)
+if "item_actual" not in st.session_state:
+    st.session_state.item_actual = None
 rgb_color = (0, 51, 102)
 
-# SIDEBAR -----
+# SIDEBAR ----------------------------------------------------------
 with st.sidebar:
-    if os.path.exists("logo.png"): st.image("logo.png", width=180)
-    else: st.header("🏗️ Constructora")
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=180)
+    else:
+        st.header("🏗️ Constructora")
+
     st.divider()
     st.subheader("Portafolio")
+
     nombre = st.text_input("Nuevo Proyecto:")
     if st.button("Crear / Cargar", use_container_width=True):
         if nombre:
             if nombre not in st.session_state.proyecto_items:
                 st.session_state.proyecto_items[nombre] = {"params": {}, "bitacora": None}
             st.session_state.item_actual = nombre
+
     if st.session_state.proyecto_items:
-        st.session_state.item_actual = st.selectbox("Proyecto Activo:", list(st.session_state.proyecto_items.keys()))
+        st.session_state.item_actual = st.selectbox(
+            "Proyecto Activo:", list(st.session_state.proyecto_items.keys())
+        )
+
     st.divider()
     with st.expander("🎨 Color"):
         color_marca = st.color_picker("Tono Reporte", "#003366")
         h = color_marca.lstrip('#')
         rgb_color = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
 
-    # 👇 Cerrar sesión
     st.divider()
     if st.button("🚪 Cerrar sesión", use_container_width=True):
         st.session_state.user = None
         st.experimental_rerun()
 
-
-    st.subheader("Portafolio")
-    nombre = st.text_input("Nuevo Proyecto:")
-    if st.button("Crear / Cargar", use_container_width=True):
-        if nombre:
-            if nombre not in st.session_state.proyecto_items:
-                st.session_state.proyecto_items[nombre] = {"params": {}, "bitacora": None}
-            st.session_state.item_actual = nombre
-    if st.session_state.proyecto_items:
-        st.session_state.item_actual = st.selectbox("Proyecto Activo:", list(st.session_state.proyecto_items.keys()))
-    st.divider()
-    with st.expander("🎨 Color"):
-        color_marca = st.color_picker("Tono Reporte", "#003366")
-        h = color_marca.lstrip('#')
-        rgb_color = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-
-# --- PANTALLA DE BIENVENIDA (Centrada) ----
+# -----------------------------------------------------------------
+# --- PANTALLA DE BIENVENIDA ---
 if not st.session_state.item_actual:
-    st.write("") # Espacio vacío arriba
-    st.write("") 
-    st.write("") 
-    st.write("Constructora Vanoy SAS") 
-    
-    # Creamos 3 columnas: Izquierda(vacía), CENTRO(contenido), Derecha(vacía)
+    st.write("")
+    st.write("")
+    st.write("Constructora Vanoy SAS")
+
     col_izq, col_centro, col_der = st.columns([1, 2, 1])
-    
     with col_centro:
         st.info("👈 **Para comenzar:**")
         st.markdown("""
@@ -127,19 +121,17 @@ if not st.session_state.item_actual:
                 y presiona el botón <b>'Crear / Cargar'</b>.</p>
             </div>
         """, unsafe_allow_html=True)
-        
+
     st.stop()
 
 item_id = st.session_state.item_actual
-st.write("") 
-st.write("") 
+st.write("")
 st.title(f"Control: {item_id}")
 
-# 1. CONFIGURACIÓN
-# --- ESTILO VISUAL PERSONALIZADO (CSS) ---
+# -----------------------------------------------------------------
+# --- PESTAÑAS DE CONFIGURACIÓN ---
 st.markdown("""
 <style>
-    /* Estilo para los TABS NO seleccionados (Gris claro) */
     button[data-baseweb="tab"] {
         background-color: #423f3f;
         border: 1px solid #f57d7d;
@@ -147,8 +139,6 @@ st.markdown("""
         padding: 0px 15px;
         margin-right: 5px;
     }
-
-    /* Estilo para el TAB SELECCIONADO (Rojo relleno y texto blanco) */
     button[data-baseweb="tab"][aria-selected="true"] {
         background-color: #FF4B4B !important;
         color: white !important;
@@ -158,10 +148,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- TU CÓDIGO DE PESTAÑAS ---
 st.markdown("#### 1. Configuración de Obra")
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Contrato", "🏗️ Operativo", "🏢 Admin", "Logística RCD", "🎛️ Simulación"])
-
 
 #----st.markdown("#### 1. Configuración de Obra")
 #tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Contrato", "🏗️ Operativo", "🏢 Admin", "🚛 Logística RCD", "🎛️ Simulación"])----
@@ -305,8 +293,9 @@ from utils.google_sync import guardar_proyectos_google, cargar_proyectos_google
 if "proyecto_items" not in st.session_state:
     st.session_state.proyecto_items = cargar_proyectos_google(user_email)
 
-# Guardar cada vez que cambia algo
+# Guardado en Google (se hace al final)
 guardar_proyectos_google(user_email, st.session_state.proyecto_items)
+
 
 
 
