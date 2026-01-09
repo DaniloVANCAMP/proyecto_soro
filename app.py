@@ -13,21 +13,24 @@ st.set_page_config(page_title="Control Obra", layout="wide")
 if "user" not in st.session_state:
     st.session_state.user = None
 
-if not st.session_state.user:
-# Creamos 3 columnas: [Espacio Vacio] - [LOGIN PEQUEÑO] - [Espacio Vacio]
-# El [0.6] del medio define qué tan ancho es el login. Si quieres más estrecho, baja a 0.5 o 0.4
-c1, c2, c3 = st.columns([1, 0.6, 1]) 
+st.markdown(
+    """
+    <div style='
+        text-align:center;
+        padding-top: 60px;
+        max-width: 500px;
+        margin: auto;
+        background-color: rgba(255,255,255,0.85);
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0px 2px 10px rgba(0,0,0,0.1);
+    '>
+        <h1 style='font-size: 22px; color:#004c91;'>🔐 Acceso al Control de Obra</h1>
+        <p style='color:#666;'>Inicia sesión con tu cuenta autorizada</p>
+    </div>
+    """, unsafe_allow_html=True
+)
 
-with c2:
-    st.markdown(
-        """
-        <div style='text-align: center; padding-top: 50px; padding-bottom: 20px;'>
-            <h1 style='font-size: 22px; color:#004c91; margin-bottom: 5px;'>🔐 Acceso al Control</h1>
-            <p style='font-size: 14px; color:#666;'>Ingresa tus credenciales</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
     
     # Aquí irían tus inputs de usuario y contraseña para que queden alineados con el título
     usuario = st.text_input("Usuario")
