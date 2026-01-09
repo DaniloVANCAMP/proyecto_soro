@@ -118,12 +118,12 @@ def procesar_datos(params, bitacora):
 
     comparativa = pd.DataFrame({
         "Indicador": ["Equipo / Cuadrilla", "Tiempo Restante", "Utilidad Proyectada", "IMPACTO ($)"],
-        "Tendencia": [f"{int(u['num_ayudantes'])}A/{int(u['num_maestros'])}M/{int(r_ult)}Ret", f"{int(dias_t)} días", f_cop(util_t), "---"],
-        "Óptimo": [f"{int(opt['Ayud'])}A/{int(opt['Mae'])}M/{int(opt['Retro'])}Ret", f"{int(opt['Días'])} días", f_cop(opt['Utilidad']), f"+ {f_cop(impacto)}"]
+        "Tendencia": [f"{int(u['num_ayudantes'])}Ayudantes/{int(u['num_maestros'])}Maestros/{int(r_ult)}Retro", f"{int(dias_t)} días", f_cop(util_t), "---"],
+        "Óptimo": [f"{int(opt['Ayud'])}Ayudantes/{int(opt['Mae'])}Maestros/{int(opt['Retro'])}Retro", f"{int(opt['Días'])} días", f_cop(opt['Utilidad']), f"+ {f_cop(impacto)}"]
     })
 
     balance = pd.DataFrame({
-        "Rubro": ["1. Ejecutado", "2. Nómina/Mq", "3. Logística/RCD", "4. Costos Fijos", "5. Imprevistos", "UTILIDAD FINAL"],
+        "Rubro": ["1. Ejecutado", "2. Nómina y Maquinaria", "3. Logística/RCD", "4. Costos Fijos", "5. Imprevistos", "UTILIDAD FINAL"],
         "Valor": [f_cop(gasto_ejecutado), f_cop(opt['C_Var']), f_cop(opt['RCD']), f_cop(opt['C_Fijo']), f_cop(opt['Imp']), f_cop(opt['Utilidad'])]
     })
 
@@ -136,3 +136,4 @@ def procesar_datos(params, bitacora):
         "viajes": int(opt["Viajes_Dia"])
 
     }
+
