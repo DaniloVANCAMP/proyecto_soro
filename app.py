@@ -46,7 +46,7 @@ with st.sidebar:
 # --- PANTALLA DE BIENVENIDA (Centrada) ----
 if not st.session_state.item_actual:
     st.write("") # Espacio vacío arriba
-    st.write("") 
+    st.write("Constructora Vanoy SAS") 
     
     # Creamos 3 columnas: Izquierda(vacía), CENTRO(contenido), Derecha(vacía)
     col_izq, col_centro, col_der = st.columns([1, 2, 1])
@@ -196,3 +196,4 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
 
             with open(p, "rb") as f: st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
