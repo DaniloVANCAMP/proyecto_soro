@@ -71,8 +71,35 @@ st.write("")
 st.title(f"Control: {item_id}")
 
 # 1. CONFIGURACIÓN
+# --- ESTILO VISUAL PERSONALIZADO (CSS) ---
+st.markdown("""
+<style>
+    /* Estilo para los TABS NO seleccionados (Gris claro) */
+    button[data-baseweb="tab"] {
+        background-color: #f0f2f6;
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        padding: 0px 15px;
+        margin-right: 5px;
+    }
+
+    /* Estilo para el TAB SELECCIONADO (Rojo relleno y texto blanco) */
+    button[data-baseweb="tab"][aria-selected="true"] {
+        background-color: #FF4B4B !important;
+        color: white !important;
+        border-color: #FF4B4B !important;
+        font-weight: bold;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# --- TU CÓDIGO DE PESTAÑAS ---
 st.markdown("#### 1. Configuración de Obra")
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Contrato", "🏗️ Operativo", "🏢 Admin", "🚛 Logística RCD", "🎛️ Simulación"])
+
+
+#----st.markdown("#### 1. Configuración de Obra")
+#tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Contrato", "🏗️ Operativo", "🏢 Admin", "🚛 Logística RCD", "🎛️ Simulación"])----
 
 with tab1:
     c1, c2, c3, c4 = st.columns(4)
@@ -200,6 +227,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
 
             with open(p, "rb") as f: st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
