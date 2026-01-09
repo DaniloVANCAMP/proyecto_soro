@@ -4,6 +4,11 @@ numpy
 fpdf
 openpyxl
 matplotlib
+gspread
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
 
 #python -m streamlit run app.py
+
 
