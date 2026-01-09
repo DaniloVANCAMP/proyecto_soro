@@ -95,7 +95,7 @@ st.markdown("""
 
 # --- TU CÓDIGO DE PESTAÑAS ---
 st.markdown("#### 1. Configuración de Obra")
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Contrato", "🏗️ Operativo", "🏢 Admin", "🚛 Logística RCD", "🎛️ Simulación"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Contrato", "🏗️ Operativo", "🏢 Admin", "**Logística RCD**", "🎛️ Simulación"])
 
 
 #----st.markdown("#### 1. Configuración de Obra")
@@ -227,6 +227,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
 
             with open(p, "rb") as f: st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
