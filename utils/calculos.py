@@ -5,7 +5,7 @@ def calcular_factor_climatico(fila, params):
     """
     Busca la columna 'Lluvia_mm' en el Excel.
     - Si existe y tiene dato: Calcula el castigo (0.1 a 1.0).
-    - Si NO existe o está vacía: Usa el valor manual de la App (params['clima_proyectado']).
+    - Si NO existe o está vacía: Usa el valor manual de la App.
     """
     if "Lluvia_mm" in fila.index and pd.notna(fila["Lluvia_mm"]):
         mm = float(fila["Lluvia_mm"])
@@ -14,20 +14,20 @@ def calcular_factor_climatico(fila, params):
         elif mm <= 25: return 0.60    # Barro
         else: return 0.10             # Inundado
     
-    # Si no hay dato en Excel, usa el slider manual
+    # Si no hay dato en Excel, usa el manual
     return params.get("clima_proyectado", 0.90)
 
 def procesar_datos(params, df_bitacora):
     resultados = []
     
-    # Limpiamos nombres de columnas
+    # Limpieza de nombres de columnas
     df_bitacora.columns = [c.strip() for c in df_bitacora.columns]
     
     costo_acum = 0
     meta_acum = 0
     dias_trabajados = 0
     
-    # --- PROCESAMIENTO FILA POR FILA ---
+    # --- PROCESAMIENTO DÍA A DÍA ---
     for index, row in df_bitacora.iterrows():
         dias_trabajados += 1
         
@@ -45,23 +45,18 @@ def procesar_datos(params, df_bitacora):
         costo_dia = c_mo + c_eq + c_adm
         costo_acum += costo_dia
         
-        # 3. AVANCE (Aquí integramos la Lluvia sin romper nada más)
+        # 3. AVANCE
         factor_clima = calcular_factor_climatico(row, params)
         
-        # Rendimientos teóricos estándar
-        rend_retro = 200 # m3/dia
-        rend_mano = 3    # m3/dia
+        # Rendimientos teóricos
+        rend_retro = 200 
+        rend_mano = 3    
         
-        # Producción teórica (Sin lluvia)
         prod_teorica = (n_retro * rend_retro) + (n_ayu * rend_mano)
-        
-        # Producción real (Con lluvia)
         prod_real = prod_teorica * factor_clima
         
-        # Ajuste por esponjamiento (Banco vs Suelto)
-        # Asumimos que la meta está en banco
+        # Ajuste esponjamiento
         avance_banco = prod_real / params.get("factor_esponjamiento", 1.3)
-        
         meta_acum += avance_banco
         
         resultados.append({
@@ -71,29 +66,27 @@ def procesar_datos(params, df_bitacora):
             "Avance (m3)": avance_banco,
             "Avance Acum": meta_acum,
             "Eficiencia Clima": factor_clima,
-            # Guardamos datos para el Top 5
             "Ayud": n_ayu, "Mae": n_mae, "Retro": n_retro, 
             "Utilidad_Show": "Alta" if factor_clima > 0.8 else "Baja" 
         })
         
     df_res = pd.DataFrame(resultados)
     
-    # --- GENERACIÓN DE TABLAS (RESTITUIDAS AL FORMATO ORIGINAL) ---
+    # --- TABLAS (CORREGIDAS PARA EVITAR KEYERROR) ---
     
-    # 1. DASHBOARD
-    # Si no hay datos, ponemos ceros para que no falle
     ultimo_avance = df_res['Avance (m3)'].iloc[-1] if not df_res.empty else 0
     promedio_clima = df_res['Eficiencia Clima'].mean() if not df_res.empty else params.get("clima_proyectado", 0.9)
     
+    # AQUÍ ESTABA EL ERROR: Cambié "Concepto Dia" por "Concepto (Día)"
     dashboard = pd.DataFrame({
-        "Concepto Dia": ["Personal en Obra", "Maquinaria Activa", "Eficiencia Clima", "Avance del Día"],
-        "Valor Dia": [
+        "Concepto (Día)": ["Personal", "Maquinaria", "Eficiencia Clima", "Avance Hoy"],
+        "Valor (Día)": [
             f"{int(n_ayu)} Of. + {int(n_mae)} Mae",
             f"{int(n_retro)} Retro",
             f"{promedio_clima*100:.0f}%",
             f"{ultimo_avance:.1f} m³"
         ],
-        "Concepto Acum": ["Días Ejecutados", "Costo Acumulado", "Avance Total", "Proyección"],
+        "Concepto Acum": ["Días Ejecutados", "Costo Acum", "Avance Total", "Proyección"],
         "Valor Acum": [
             dias_trabajados,
             f"$ {costo_acum:,.0f}",
@@ -102,36 +95,34 @@ def procesar_datos(params, df_bitacora):
         ]
     })
     
-    # 2. LOGÍSTICA (VOLQUETAS)
-    # Calculamos basado en lo que se excavó hoy (suelto)
+    # VOLQUETAS (Logística restaurada)
     volumen_suelto_dia = ultimo_avance * params.get("factor_esponjamiento", 1.3)
     
-    # Si no se excavó nada (0), calculamos con el potencial de la máquina
-    # para recomendar cuántas se NECESITARÍAN si se trabajara a full.
     if volumen_suelto_dia == 0 and n_retro > 0:
-        volumen_suelto_dia = (n_retro * 200) # Asumimos potencial full para la recomendación
+        volumen_suelto_dia = (n_retro * 200) 
     
     cap_volq = params.get("capacidad_volqueta", 7)
     t_ciclo = params.get("tiempo_cargue", 15) + params.get("tiempo_transporte", 60)
-    viajes_volqueta_dia = 480 / t_ciclo # 480 min jornada
+    viajes_volqueta_dia = 480 / t_ciclo 
     
     viajes_req = volumen_suelto_dia / cap_volq
-    num_volquetas = viajes_req / viajes_volqueta_dia
+    # Evitamos división por cero
+    num_volquetas = viajes_req / viajes_volqueta_dia if viajes_volqueta_dia > 0 else 0
     
     flota = {
         "num_volquetas": int(np.ceil(num_volquetas)) if num_volquetas > 0 else 0,
         "viajes_dia": int(viajes_req)
     }
 
-    # 3. COMPARATIVA (Simple)
+    # COMPARATIVA
     comparativa = pd.DataFrame([
         ["Costo Final Proyectado", f"$ {costo_acum * (params['meta_metros']/meta_acum if meta_acum > 0 else 1):,.0f}", "---"],
         ["Días Estimados Fin", f"{(dias_trabajados * params['meta_metros'] / meta_acum) if meta_acum > 0 else 0:.1f}", "---"]
     ], columns=["Indicador", "Actual", "Optimizado"])
 
-    # 4. BALANCE
+    # BALANCE
     balance = pd.DataFrame([
-        ["TOTAL PAGADO (Nomina/Eq)", f"$ {costo_acum:,.0f}"],
+        ["TOTAL PAGADO", f"$ {costo_acum:,.0f}"],
         ["PRESUPUESTO EJECUTADO", f"{meta_acum/params['meta_metros']*100:.1f}%"],
         ["UTILIDAD A LA FECHA", f"$ {params['precio_contrato'] * (meta_acum/params['meta_metros']) - costo_acum:,.0f}"]
     ])
@@ -141,6 +132,7 @@ def procesar_datos(params, df_bitacora):
         "flota": flota,
         "comparativa": comparativa,
         "balance": balance,
-        "top5": df_res.tail(5), # Devolvemos las últimas 5 filas tal cual
+        "top5": df_res.tail(5), 
         "df_diario": df_res
     }
+
