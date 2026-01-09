@@ -72,12 +72,61 @@ st.markdown("#### 1. Configuración de Obra")
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Contrato", "🏗️ Operativo", "🏢 Admin", "🚛 Logística RCD", "🎛️ Simulación"])
 
 with tab1:
-    c1, c2, c3, c4 = st.columns(4)
-    with c1: precio = st.number_input("Valor Contrato ($)", value=250000000.0, format="%.0f")
-    with c2: meta = st.number_input("Meta Total (m)", value=1500.0)
-    with c3: dias_est = st.number_input("Días Plazo", value=60)
-    with c4: pct_imp = st.number_input("% Imprevistos", value=5.0, step=0.5, format="%.1f")
-    clima_p = st.slider("Factor Lluvia", 0.1, 1.0, 0.9)
+    c1, c2 = st.columns([1, 1])
+    
+    with c1:
+        st.markdown("##### 📋 Datos Contractuales")
+        # Recuperamos datos guardados
+        p_guardados = st.session_state.proyecto_items[item_id]["params"]
+        
+        precio = st.number_input("Valor Contrato ($)", value=p_guardados.get("precio_contrato", 250000000.0), format="%.0f")
+        meta = st.number_input("Meta Total (m³)", value=p_guardados.get("meta_metros", 1500.0))
+        dias_est = st.number_input("Días Plazo", value=p_guardados.get("dias_estipulados", 60))
+        pct_imp = st.number_input("% Imprevistos", value=p_guardados.get("pct_imprevistos", 0.05)*100, step=0.5, format="%.1f")
+
+    with c2:
+        st.markdown("##### 🌧️ Pluviómetro (Medición Directa)")
+        
+        # 1. AQUÍ PONES LA CANTIDAD DE AGUA QUE VES EN EL VASO
+        # Si llovió toda la noche, el vaso estará lleno. Si llovió hoy, también suma.
+        lluvia_mm = st.number_input("Lectura en Milímetros (mm):", min_value=0.0, step=0.1, help="Total de agua acumulada en el pluviómetro hoy.")
+
+        # 2. CÁLCULO DIRECTO: A más mm, menos rendimiento
+        if lluvia_mm <= 2:
+            # Hasta 2mm (Rocío o llovizna muy leve) -> 100% Rendimiento
+            clima_calculado = 1.00
+            mensaje = "🟢 Operación Normal"
+            
+        elif lluvia_mm <= 10:
+            # De 2mm a 10mm (Lluvia normal) -> 85% Rendimiento (Se pierde 15% por suelo liso)
+            clima_calculado = 0.85
+            mensaje = "🟡 Suelo Húmedo (Precaución)"
+            
+        elif lluvia_mm <= 25:
+            # De 10mm a 25mm (Lluvia Fuerte) -> 60% Rendimiento (Mucho barro, volquetas patinan)
+            clima_calculado = 0.60
+            mensaje = "🟠 Barro Pesado / Dificultad"
+            
+        else:
+            # Más de 25mm (Tormenta) -> 10% Rendimiento (Prácticamente parado)
+            clima_calculado = 0.10
+            mensaje = "🔴 Inundación / Parada Técnica"
+
+        # 3. VISUALIZACIÓN
+        st.metric(
+            label="Rendimiento del Día", 
+            value=f"{clima_calculado*100:.0f}%", 
+            delta=f"-{lluvia_mm} mm de agua ({mensaje})",
+            delta_color="off" if clima_calculado < 1.0 else "normal"
+        )
+        
+        # Barra de progreso visual
+        st.progress(clima_calculado)
+
+        # 4. GUARDADO
+        # Aquí es donde 'lluvia_mm' afecta a toda la app:
+        if "params" in st.session_state.proyecto_items[item_id]:
+             st.session_state.proyecto_items[item_id]["params"]["clima_proyectado"] = clima_calculado
 
 with tab2:
     c1, c2 = st.columns(2)
@@ -196,4 +245,5 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
 
             with open(p, "rb") as f: st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
