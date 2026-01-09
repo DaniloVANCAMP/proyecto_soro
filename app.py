@@ -43,8 +43,26 @@ with st.sidebar:
         h = color_marca.lstrip('#')
         rgb_color = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
 
+# pantalla de Bienvenida
+# --- PANTALLA DE BIENVENIDA (Centrada) ---
 if not st.session_state.item_actual:
-    st.info("👈 Crea un proyecto."); st.stop()
+    st.write("") # Espacio vacío arriba
+    st.write("") 
+    
+    # Creamos 3 columnas: Izquierda(vacía), CENTRO(contenido), Derecha(vacía)
+    col_izq, col_centro, col_der = st.columns([1, 2, 1])
+    
+    with col_centro:
+        st.info("👈 **Para comenzar:**")
+        st.markdown("""
+            <div style='text-align: center; color: #666;'>
+                <h3>¡Bienvenido al Control de Obra!</h3>
+                <p>Ve al menú lateral (izquierda), escribe un nombre <br>
+                y presiona el botón <b>'Crear / Cargar'</b>.</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    st.stop()
 
 item_id = st.session_state.item_actual
 st.title(f"Control: {item_id}")
@@ -178,3 +196,4 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
 
             with open(p, "rb") as f: st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
