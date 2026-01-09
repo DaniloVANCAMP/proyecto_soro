@@ -7,7 +7,7 @@ from utils.pdf_generator import generar_pdf
 
 st.set_page_config(page_title="Control Obra", layout="wide")
 
-from auth import autenticar, registrar_usuario, cargar_usuarios, guardar_usuarios
+from utils.auth import autenticar, registrar_usuario, cargar_usuarios, guardar_usuarios
 # --- LOGIN / REGISTRO ---
 if "user" not in st.session_state:
     st.session_state.user = None
@@ -307,6 +307,7 @@ if "proyecto_items" not in st.session_state:
 
 # Guardar cada vez que cambia algo
 guardar_proyectos_google(user_email, st.session_state.proyecto_items)
+
 
 
 
