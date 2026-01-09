@@ -1,7 +1,7 @@
 import json
 import os
 
-# utils/auth.py
+# Lista de correos permitidos para acceder al sistema
 USUARIOS_AUTORIZADOS = [
     "naidaluzmontero@gmail.com",
     "daniloanhelo20172@gmail.com"
@@ -26,6 +26,11 @@ def registrar_usuario(email, password):
     usuarios = cargar_usuarios()
     if email in usuarios:
         return False, "⚠️ El correo ya está registrado."
+    
+    # Validar si el correo está autorizado
+    if email not in USUARIOS_AUTORIZADOS:
+        return False, "🚫 Este correo no está autorizado para registrarse."
+    
     usuarios[email] = password
     guardar_usuarios(usuarios)
     return True, "✅ Usuario registrado correctamente."
@@ -33,4 +38,10 @@ def registrar_usuario(email, password):
 # --- AUTENTICAR USUARIO ---
 def autenticar(email, password):
     usuarios = cargar_usuarios()
+    
+    # Verificar si el correo está autorizado
+    if email not in USUARIOS_AUTORIZADOS:
+        return False
+    
     return usuarios.get(email) == password
+
