@@ -1,6 +1,12 @@
 import json
 import os
 
+# utils/auth.py
+USUARIOS_AUTORIZADOS = [
+    "naidaluzmontero@gmail.com",
+    "daniloanhelo20172@gmail.com"
+]
+
 ARCHIVO_USUARIOS = "usuarios.json"
 
 # --- CARGAR USUARIOS ---
