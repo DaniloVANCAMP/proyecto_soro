@@ -4,6 +4,15 @@ import os
 from utils.calculos import procesar_datos
 from utils.pdf_generator import generar_pdf
 
+
+from utils.auth import login_screen, cerrar_sesion
+
+# Verificar login
+if "usuario" not in st.session_state:
+    login_screen()
+    st.stop()
+
+
 st.set_page_config(page_title="Control Obra", layout="wide")
 
 from auth import autenticar, registrar_usuario, cargar_usuarios, guardar_usuarios
@@ -277,6 +286,7 @@ if "proyecto_items" not in st.session_state:
 
 # Guardar cada vez que cambia algo
 guardar_proyectos_google(user_email, st.session_state.proyecto_items)
+
 
 
 
