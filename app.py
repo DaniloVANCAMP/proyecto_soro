@@ -58,15 +58,32 @@ if "proyecto_items" not in st.session_state: st.session_state.proyecto_items = {
 if "item_actual" not in st.session_state: st.session_state.item_actual = None
 rgb_color = (0, 51, 102)
 
-# SIDEBAR
+# SIDEBAR -----
 with st.sidebar:
     if os.path.exists("logo.png"): st.image("logo.png", width=180)
     else: st.header("🏗️ Constructora")
     st.divider()
-    st.sidebar.divider()
-if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
-    st.session_state.user = None
-    st.experimental_rerun()
+    st.subheader("Portafolio")
+    nombre = st.text_input("Nuevo Proyecto:")
+    if st.button("Crear / Cargar", use_container_width=True):
+        if nombre:
+            if nombre not in st.session_state.proyecto_items:
+                st.session_state.proyecto_items[nombre] = {"params": {}, "bitacora": None}
+            st.session_state.item_actual = nombre
+    if st.session_state.proyecto_items:
+        st.session_state.item_actual = st.selectbox("Proyecto Activo:", list(st.session_state.proyecto_items.keys()))
+    st.divider()
+    with st.expander("🎨 Color"):
+        color_marca = st.color_picker("Tono Reporte", "#003366")
+        h = color_marca.lstrip('#')
+        rgb_color = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+    # 👇 Cerrar sesión
+    st.divider()
+    if st.button("🚪 Cerrar sesión", use_container_width=True):
+        st.session_state.user = None
+        st.experimental_rerun()
+
 
     st.subheader("Portafolio")
     nombre = st.text_input("Nuevo Proyecto:")
@@ -282,6 +299,7 @@ if "proyecto_items" not in st.session_state:
 
 # Guardar cada vez que cambia algo
 guardar_proyectos_google(user_email, st.session_state.proyecto_items)
+
 
 
 
