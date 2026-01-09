@@ -6,6 +6,41 @@ from utils.pdf_generator import generar_pdf
 
 st.set_page_config(page_title="Control Obra", layout="wide")
 
+from auth import autenticar, registrar_usuario, cargar_usuarios, guardar_usuarios
+
+# --- LOGIN / REGISTRO ---
+if "user" not in st.session_state:
+    st.session_state.user = None
+
+if not st.session_state.user:
+    st.title("🔐 Acceso al Control de Obra")
+
+    tab_login, tab_signup = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
+
+    with tab_login:
+        email = st.text_input("Correo")
+        password = st.text_input("Contraseña", type="password")
+        if st.button("Entrar", use_container_width=True):
+            if autenticar(email, password):
+                st.session_state.user = email
+                st.rerun()
+            else:
+                st.error("Credenciales incorrectas.")
+
+    with tab_signup:
+        new_email = st.text_input("Correo Nuevo")
+        new_pass = st.text_input("Contraseña Nueva", type="password")
+        if st.button("Registrarse", use_container_width=True):
+            ok, msg = registrar_usuario(new_email, new_pass)
+            if ok: st.success(msg)
+            else: st.warning(msg)
+
+    st.stop()
+
+# --- Usuario autenticado ---
+user_email = st.session_state.user
+st.sidebar.success(f"👤 {user_email}")
+
 # CSS
 st.markdown("""
 <style>
@@ -229,6 +264,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
 
             with open(p, "rb") as f: st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
