@@ -268,6 +268,19 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
 
 
 
+# -------------------------------------------------------------------------------------------------------------------#
+from utils.google_sync import guardar_proyectos_google, cargar_proyectos_google
+
+# Cargar al inicio
+if "proyecto_items" not in st.session_state:
+    st.session_state.proyecto_items = cargar_proyectos_google(user_email)
+
+# Guardar cada vez que cambia algo
+guardar_proyectos_google(user_email, st.session_state.proyecto_items)
+
+
+
+
 
 
 
