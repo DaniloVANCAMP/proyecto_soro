@@ -66,6 +66,8 @@ if not st.session_state.item_actual:
     st.stop()
 
 item_id = st.session_state.item_actual
+st.write("") 
+st.write("") 
 st.title(f"Control: {item_id}")
 
 # 1. CONFIGURACIÓN
@@ -198,5 +200,6 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
 
             with open(p, "rb") as f: st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
