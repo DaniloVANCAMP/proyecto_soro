@@ -119,7 +119,7 @@ def procesar_datos(params, bitacora):
     comparativa = pd.DataFrame({
         "Indicador": ["Equipo / Cuadrilla", "Tiempo Restante", "Utilidad Proyectada", "IMPACTO ($)"],
         "Tendencia": [f"{int(u['num_ayudantes'])} Ayudantes/{int(u['num_maestros'])} Maestros/{int(r_ult)} Retro", f"{int(dias_t)} días", f_cop(util_t), "---"],
-        "Óptimo": [f"{int(opt['Ayud'])}Ayudantes/{int(opt['Mae'])} Maestros/{int(opt['Retro'])} Retro", f"{int(opt['Días'])} días", f_cop(opt['Utilidad']), f"+ {f_cop(impacto)}"]
+        "Óptimo": [f"{int(opt['Ayud'])} Ayudantes/{int(opt['Mae'])} Maestros/{int(opt['Retro'])} Retro", f"{int(opt['Días'])} días", f_cop(opt['Utilidad']), f"+ {f_cop(impacto)}"]
     })
 
     balance = pd.DataFrame({
@@ -136,5 +136,6 @@ def procesar_datos(params, bitacora):
         "viajes": int(opt["Viajes_Dia"])
 
     }
+
 
 
