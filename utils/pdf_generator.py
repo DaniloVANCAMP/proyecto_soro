@@ -1,5 +1,6 @@
 from fpdf import FPDF
 import os
+import tempfile  # <--- Importante para la nube
 
 class PDF(FPDF):
     def __init__(self, color_rgb):
@@ -71,7 +72,7 @@ def generar_pdf(res, nombre, cfg):
         pdf.cell(70, 6, str(row[1]), 1)
         pdf.cell(70, 6, str(row[2]), 1, 1)
 
-    # 4. LOGÍSTICA (NUEVO)
+    # 4. LOGÍSTICA
     pdf.ln(5); pdf.set_fill_color(*c); pdf.set_text_color(255); pdf.set_font('Arial', 'B', 9)
     pdf.cell(0, 7, " 3. PLAN LOGÍSTICO REQUERIDO", 0, 1, 'L', True)
     pdf.set_text_color(0); pdf.ln(2); pdf.set_font('Arial', '', 9)
@@ -101,10 +102,13 @@ def generar_pdf(res, nombre, cfg):
     for _, r in res['top5'].iterrows():
         pdf.cell(38, 6, str(int(r['Ayud'])), 1, 0, 'C')
         pdf.cell(38, 6, str(int(r['Mae'])), 1, 0, 'C')
-        pdf.cell(38, 6, f"{int(r['Retro'])} Und", 1, 0, 'C') # Aquí sale "1 Und"
+        pdf.cell(38, 6, f"{int(r['Retro'])} Und", 1, 0, 'C')
         pdf.cell(38, 6, str(int(r['Días'])), 1, 0, 'C')
         pdf.cell(38, 6, str(r['Utilidad_Show']), 1, 1, 'R')
 
-    p = f"output/Reporte_{nombre}.pdf"
-    pdf.output(p)
-    return p
+    # --- CAMBIO CRÍTICO AQUÍ ---
+    # Usamos un archivo temporal para que funcione en la nube
+    # sin necesidad de crear carpetas manualmente.
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        pdf.output(tmp.name)
+        return tmp.name
