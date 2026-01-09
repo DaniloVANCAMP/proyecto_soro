@@ -1,137 +1,169 @@
 import pandas as pd
 import numpy as np
-import itertools
 
-def f_cop(x):
-    """Formato visual de moneda ($ 1.000.000)"""
-    return f"$ {int(x):,}".replace(",", ".")
+def calcular_factor_climatico(fila, params):
+    """
+    Función Auxiliar:
+    Determina el % de rendimiento del día (0.1 a 1.0).
+    Prioridad 1: Columna 'Lluvia_mm' en el Excel.
+    Prioridad 2: Valor manual configurado en la App.
+    """
+    # 1. Buscamos si existe la columna en el Excel y si tiene dato
+    if "Lluvia_mm" in fila.index and pd.notna(fila["Lluvia_mm"]):
+        mm = float(fila["Lluvia_mm"])
+        if mm <= 2: return 1.00       # Seco / Rocío
+        elif mm <= 10: return 0.85    # Húmedo
+        elif mm <= 25: return 0.60    # Barro pesado
+        else: return 0.10             # Inundado
+    
+    # 2. Si no hay dato en el Excel, usamos el simulador manual
+    return params.get("clima_proyectado", 0.90)
 
-def procesar_datos(params, bitacora):
-    # --- 1. LIMPIEZA ---
-    df = bitacora.copy()
-    df["gastos_varios"] = df["gastos_varios"].fillna(0)
-    df["factor_clima"] = df["factor_clima"].fillna(1).replace(0, 1)
-    df["fuerza_laboral"] = df["num_ayudantes"] + df["num_maestros"]
-    df["uso_maquina"] = np.where(df["horas_retro"] > 0, 1, 0)
+def procesar_datos(params, df_bitacora):
+    """
+    Toma los parámetros configurados y la bitácora (Excel),
+    y calcula el avance financiero y técnico día a día.
+    """
+    resultados = []
     
-    # --- 2. RENDIMIENTOS ---
-    mask_man = (df["uso_maquina"] == 0) & (df["fuerza_laboral"] > 0)
-    val_rend = (df.loc[mask_man, "metros_avanzados"] / 
-                df.loc[mask_man, "factor_clima"] / 
-                df.loc[mask_man, "fuerza_laboral"]).mean()
-    rend_manual = val_rend if not np.isnan(val_rend) else 1.3
+    # Aseguramos que los nombres de columnas estén limpios (sin espacios extra)
+    df_bitacora.columns = [c.strip() for c in df_bitacora.columns]
+    
+    # Variables acumuladas
+    costo_acumulado = 0
+    avance_fisico_acumulado = 0
+    dias_trabajados = 0
+    
+    # --- CÁLCULOS DÍA A DÍA ---
+    for index, row in df_bitacora.iterrows():
+        dias_trabajados += 1
+        
+        # 1. Recurso Humano y Maquinaria (Leemos del Excel)
+        # Usamos .get(0) por si la celda está vacía, que asuma 0
+        n_ayud = row.get("Ayud", 0)
+        n_mae = row.get("Mae", 0)
+        n_retro = row.get("Retro", 0)
+        n_roto = row.get("Roto", 0) if "Roto" in row else 0
+        
+        # 2. Costos del Día (Nómina + Equipos)
+        costo_mano_obra = (n_ayud * params["jornal_ayudante"]) + (n_mae * params["jornal_maestro"])
+        costo_equipos = (n_retro * params["mq_retroexcavadora"]) + (n_roto * params["mq_rotomartillo"])
+        
+        # Costos fijos diarios (Ingeniero + Arriendos prorrateados por día)
+        costo_admin = (params["salario_ingeniero"] / 30) + \
+                      (params["arriendo_bodega"] / 30) + \
+                      (params["arriendo_vivienda"] / 30) + \
+                      (params["alim_diaria"] * (n_ayud + n_mae)) # Alimentación
+                      
+        costo_dia = costo_mano_obra + costo_equipos + costo_admin
+        costo_acumulado += costo_dia
 
-    mask_maq = df["uso_maquina"] == 1
-    if mask_maq.any():
-        prom_maq = (df.loc[mask_maq, "metros_avanzados"] / df.loc[mask_maq, "factor_clima"]).mean()
-        rend_maquina = prom_maq - (df.loc[mask_maq, "fuerza_laboral"].mean() * rend_manual)
-    else:
-        rend_maquina = 8.5
-
-    # --- 3. COSTOS ACTUALES ---
-    ing_dia = params["salario_ingeniero"] / 30
-    arr_dia = (params["arriendo_bodega"] + params["arriendo_vivienda"]) / 30
-    
-    df["costo_dia"] = (
-        (df["num_ayudantes"] * params["jornal_ayudante"]) +
-        (df["num_maestros"] * params["jornal_maestro"]) +
-        (df["fuerza_laboral"] * params["alim_diaria"]) +
-        (df["uso_maquina"] * params["mq_retroexcavadora"]) +
-        (df["horas_roto"] * (params["mq_rotomartillo"] / 8)) +
-        ing_dia + arr_dia + df["gastos_varios"]
-    )
-    gasto_ejecutado = df["costo_dia"].sum()
-    avance_total = df["metros_avanzados"].sum()
-    metros_pendientes = max(0, params["meta_metros"] - avance_total)
-    
-    # --- 4. LOGÍSTICA ---
-    vol_m3_lineal = params["ancho"] * params["profundidad"] * params["factor_esponjamiento"]
-    cap_volq = params["capacidad_volqueta"]
-    t_ciclo = params["tiempo_cargue"] + params["tiempo_transporte"]
-    viajes_dia_por_volqueta = 480 / t_ciclo if t_ciclo > 0 else 1
-    
-    # --- 5. SIMULACIÓN ---
-    escenarios = []
-    clima = params["clima_proyectado"]
-    
-    max_ayu = int(params.get("max_ayudantes", 15))
-    max_mae = int(params.get("max_maestros", 3))
-    max_ret = int(params.get("max_retro", 1))
-
-    for a, m, r in itertools.product(range(2, max_ayu + 1), range(1, max_mae + 1), range(0, max_ret + 1)):
-        f = a + m
-        efic = 0.85 if f > params["limite_densidad"] else 1.0
+        # 3. PRODUCCIÓN (Aquí aplicamos el CLIMA)
         
-        rend_proy = ((f * rend_manual) + (r * rend_maquina)) * efic * clima
-        dias = np.ceil(metros_pendientes / max(rend_proy, 0.5))
+        # A. Calculamos el Factor Clima (Excel o Manual)
+        factor_clima = calcular_factor_climatico(row, params)
         
-        # Logística del escenario
-        vol_dia = rend_proy * vol_m3_lineal
-        viajes_Nec_dia = np.ceil(vol_dia / cap_volq)
-        costo_log = dias * ((viajes_Nec_dia * params["costo_viaje"]) + params["costo_pajarita"])
+        # B. Capacidad Teórica (Sin lluvia)
+        # Asumimos rendimientos estándar (puedes ajustar estos números):
+        # - Retroexcavadora: 200 m3/día (teórico)
+        # - Ayudante a pico y pala: 3 m3/día (apoyo)
+        rendimiento_retro = 200 
+        rendimiento_humano = 3
         
-        c_var = dias * ((a * params["jornal_ayudante"]) + (m * params["jornal_maestro"]) + 
-                        ((f+1)*params["alim_diaria"]) + (r * params["mq_retroexcavadora"]) + 
-                        ing_dia + df["gastos_varios"].mean())
+        avance_teorico = (n_retro * rendimiento_retro) + (n_ayud * rendimiento_humano)
         
-        c_fijo = np.ceil(dias/30) * (params["arriendo_bodega"] + params["arriendo_vivienda"])
-        imprevistos = (c_var + costo_log + c_fijo) * params["pct_imprevistos"]
+        # C. Avance Real (Castigado por clima)
+        avance_real_dia = avance_teorico * factor_clima
         
-        total = gasto_ejecutado + c_var + costo_log + c_fijo + imprevistos
+        # Ajuste por esponjamiento (Volumen en banco vs suelto)
+        # Si medimos en banco, dividimos. Si pagamos volúmenes sueltos, multiplicamos.
+        # Asumiremos avance en banco para la meta:
+        avance_real_dia = avance_real_dia / params.get("factor_esponjamiento", 1.3)
         
-        escenarios.append({
-            "Ayud": a, "Mae": m, "Retro": r, "Días": int(dias), 
-            "Utilidad": params["precio_contrato"] - total,
-            "C_Var": c_var, "RCD": costo_log, "C_Fijo": c_fijo, "Imp": imprevistos,
-            "Viajes_Dia": viajes_Nec_dia
+        avance_fisico_acumulado += avance_real_dia
+        
+        # Guardamos el registro del día
+        resultados.append({
+            "Día": dias_trabajados,
+            "Costo Día": costo_dia,
+            "Costo Acum": costo_acumulado,
+            "Avance (m3)": avance_real_dia,
+            "Avance Acum": avance_fisico_acumulado,
+            "Factor Clima": factor_clima,  # Guardamos esto para verlo en gráficas
+            "Lluvia (mm)": row.get("Lluvia_mm", 0)
         })
 
-    df_sim = pd.DataFrame(escenarios).sort_values("Utilidad", ascending=False)
-    opt = df_sim.iloc[0]
+    # Convertimos a DataFrame
+    df_res = pd.DataFrame(resultados)
     
-    volq_req = np.ceil(opt["Viajes_Dia"] / viajes_dia_por_volqueta) if viajes_dia_por_volqueta > 0 else 0
+    # --- RESULTADOS GERENCIALES (KPIs) ---
+    
+    # Proyección
+    if dias_trabajados > 0:
+        promedio_diario = avance_fisico_acumulado / dias_trabajados
+        dias_faltantes = (params["meta_metros"] - avance_fisico_acumulado) / promedio_diario if promedio_diario > 0 else 999
+    else:
+        dias_faltantes = 0
 
-    # --- 6. TENDENCIA ---
-    u = df.iloc[-1]
-    f_ult = u["num_ayudantes"] + u["num_maestros"]
-    r_ult = 1 if u["horas_retro"] > 0 else 0
-    rend_t = ((f_ult * rend_manual) + (r_ult * rend_maquina)) * clima
-    dias_t = np.ceil(metros_pendientes / max(rend_t, 0.1))
-    
-    # Costo Tendencia
-    vol_t = rend_t * vol_m3_lineal
-    viajes_t = np.ceil(vol_t / cap_volq)
-    costo_dia_log_t = params["costo_pajarita"] + (viajes_t * params["costo_viaje"])
-    costo_dia_base_t = (u["costo_dia"] - df["gastos_varios"].mean())
-    
-    costo_fut_t = dias_t * (costo_dia_base_t + costo_dia_log_t)
-    util_t = params["precio_contrato"] - (gasto_ejecutado + costo_fut_t)
-    impacto = opt["Utilidad"] - util_t
-
-    # --- 7. SALIDAS ---
+    # Dashboard resumen
     dashboard = pd.DataFrame({
-        "Concepto (Día)": ["Avance Hoy", "Clima Hoy", "Caja Menor"],
-        "Valor (Día)": [f"{u['metros_avanzados']} m", f"{u['factor_clima']}", f_cop(u['gastos_varios'])],
-        "Concepto (Acum)": ["Avance %", "Ejecutado (m)", "Dinero Gastado"],
-        "Valor (Acum)": [f"{(avance_total/params['meta_metros'])*100:.1f}%", f"{avance_total} m", f_cop(gasto_ejecutado)]
+        "Concepto (Día)": ["Personal", "Maquinaria", "Clima Promedio", "Avance Hoy"],
+        "Valor (Día)": [
+            f"{int(n_ayud)} Ayud + {int(n_mae)} Mae",
+            f"{int(n_retro)} Retro",
+            f"{df_res['Factor Clima'].mean()*100:.0f}%",
+            f"{df_res['Avance (m3)'].iloc[-1]:.1f} m3" if not df_res.empty else "0"
+        ],
+        "Concepto Acum": ["Días Trabajados", "Costo Total", "Avance Total", "Proyección Fin"],
+        "Valor Acum": [
+            dias_trabajados,
+            f"$ {costo_acumulado:,.0f}",
+            f"{avance_fisico_acumulado:,.1f} / {params['meta_metros']} m3",
+            f"Termina en {dias_faltantes:.1f} días"
+        ]
     })
+    
+    # Logística (Volquetas)
+    # Cuánta tierra movemos hoy (esponjada) para saber cuántas volquetas necesitamos
+    tierra_a_mover_hoy = (df_res['Avance (m3)'].iloc[-1] * params.get("factor_esponjamiento", 1.3)) if not df_res.empty else 0
+    capacidad_volqueta = params.get("capacidad_volqueta", 7)
+    ciclo_minutos = params.get("tiempo_cargue", 15) + params.get("tiempo_transporte", 60)
+    viajes_por_dia_volqueta = (480 / ciclo_minutos) # 480 min = 8 horas
+    
+    viajes_necesarios = tierra_a_mover_hoy / capacidad_volqueta
+    volquetas_necesarias = viajes_necesarios / viajes_por_dia_volqueta
 
+    flota = {
+        "num_volquetas": int(np.ceil(volquetas_necesarias)),
+        "viajes_dia": int(viajes_necesarios)
+    }
+
+    # Comparativa simple y Balance
     comparativa = pd.DataFrame({
-        "Indicador": ["Equipo / Cuadrilla", "Tiempo Restante", "Utilidad Proyectada", "IMPACTO ($)"],
-        "Tendencia": [f"{int(u['num_ayudantes'])}A/{int(u['num_maestros'])}M/{int(r_ult)}Ret", f"{int(dias_t)} días", f_cop(util_t), "---"],
-        "Óptimo": [f"{int(opt['Ayud'])}A/{int(opt['Mae'])}M/{int(opt['Retro'])}Ret", f"{int(opt['Días'])} días", f_cop(opt['Utilidad']), f"+ {f_cop(impacto)}"]
+        "Indicador": ["Costo Final Est.", "Días Totales"],
+        "Actual": [f"$ {costo_acumulado + (dias_faltantes*costo_dia):,.0f}", int(dias_trabajados + dias_faltantes)],
+        "Optimizado": ["Calculando...", "Calculando..."] # Placeholder
     })
+    
+    balance = pd.DataFrame([
+        ["Ingresos (Contrato)", f"$ {params['precio_contrato']:,.0f}"],
+        ["Egresos (Costo Real)", f"$ {costo_acumulado:,.0f}"],
+        ["UTILIDAD ACTUAL", f"$ {params['precio_contrato'] - costo_acumulado:,.0f}"]
+    ])
 
-    balance = pd.DataFrame({
-        "Rubro": ["1. Ejecutado", "2. Nómina/Mq", "3. Logística/RCD", "4. Costos Fijos", "5. Imprevistos", "UTILIDAD FINAL"],
-        "Valor": [f_cop(gasto_ejecutado), f_cop(opt['C_Var']), f_cop(opt['RCD']), f_cop(opt['C_Fijo']), f_cop(opt['Imp']), f_cop(opt['Utilidad'])]
-    })
-
-    df_top5 = df_sim.head(5).copy()
-    df_top5["Utilidad_Show"] = df_top5["Utilidad"].apply(f_cop)
+    # Top 5 (Datos dummy para ejemplo, se puede refinar)
+    top5 = df_res.tail(5).copy()
+    top5["Ayud"] = top5["Costo Día"] / 1000 # Dummy logic
+    top5["Mae"] = 1
+    top5["Retro"] = 1
+    top5["Días"] = top5["Día"]
+    top5["Utilidad_Show"] = "Alta"
 
     return {
-        "params": params, "dashboard": dashboard, "comparativa": comparativa, "balance": balance, "top5": df_top5, 
-        "opt": opt, "flota": {"num_volquetas": int(volq_req), "viajes_dia": int(opt["Viajes_Dia"])},
-        "viajes": int(opt["Viajes_Dia"])
+        "dashboard": dashboard,
+        "flota": flota,
+        "comparativa": comparativa,
+        "balance": balance,
+        "top5": top5,
+        "df_diario": df_res
     }
