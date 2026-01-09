@@ -76,7 +76,7 @@ st.markdown("""
 <style>
     /* Estilo para los TABS NO seleccionados (Gris claro) */
     button[data-baseweb="tab"] {
-        background-color: #050303;
+        background-color: #423f3f;
         border: 1px solid #f57d7d;
         border-radius: 5px;
         padding: 0px 15px;
@@ -227,6 +227,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
 
             with open(p, "rb") as f: st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
