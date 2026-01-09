@@ -1,0 +1,9 @@
+streamlit
+pandas
+numpy
+fpdf
+openpyxl
+matplotlib
+
+#python -m streamlit run app.py
+
