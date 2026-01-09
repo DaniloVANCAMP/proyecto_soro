@@ -14,16 +14,25 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 if not st.session_state.user:
+# Creamos 3 columnas: [Espacio Vacio] - [LOGIN PEQUEÑO] - [Espacio Vacio]
+# El [0.6] del medio define qué tan ancho es el login. Si quieres más estrecho, baja a 0.5 o 0.4
+c1, c2, c3 = st.columns([1, 0.6, 1]) 
+
+with c2:
     st.markdown(
         """
-        <div style='text-align:center; padding-top: 120px;'>
-            <h1 style='font-size: 28px; color:#004c91;'>🔐 Acceso al Control de Obra</h1>
-            <p style='color:#666;'>Por favor inicia sesión o crea tu cuenta</p>
+        <div style='text-align: center; padding-top: 50px; padding-bottom: 20px;'>
+            <h1 style='font-size: 22px; color:#004c91; margin-bottom: 5px;'>🔐 Acceso al Control</h1>
+            <p style='font-size: 14px; color:#666;'>Ingresa tus credenciales</p>
         </div>
         """,
         unsafe_allow_html=True
     )
-
+    
+    # Aquí irían tus inputs de usuario y contraseña para que queden alineados con el título
+    usuario = st.text_input("Usuario")
+    passw = st.text_input("Contraseña", type="password")
+    st.button("Ingresar", use_container_width=True)
     tab_login, tab_signup = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
 
     with tab_login:
@@ -295,6 +304,7 @@ if "proyecto_items" not in st.session_state:
 
 # Guardado en Google (se hace al final)
 guardar_proyectos_google(user_email, st.session_state.proyecto_items)
+
 
 
 
