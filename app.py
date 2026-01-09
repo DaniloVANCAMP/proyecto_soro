@@ -95,7 +95,7 @@ st.markdown("""
 
 # --- TU CÓDIGO DE PESTAÑAS ---
 st.markdown("#### 1. Configuración de Obra")
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Contrato", "🏗️ Operativo", "🏢 Admin", "**Logística RCD**", "🎛️ Simulación"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Contrato", "🏗️ Operativo", "🏢 Admin", "Logística RCD", "🎛️ Simulación"])
 
 
 #----st.markdown("#### 1. Configuración de Obra")
@@ -205,13 +205,15 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
     with c1:
         st.caption("📊 Estado")
         st.dataframe(res["dashboard"].set_index("Concepto (Día)").T, use_container_width=True)
+   
     with c2:
-        st.caption("🚚 Flota Sugerida")
+        st.caption("🚚 Equipo Sugerido Eliminación de Escombros")
         st.info(f"Requieres: **{res['flota']['num_volquetas']} Volquetas** y **1 Pajarita**.")
     
     c1, c2 = st.columns(2)
+    
     with c1:
-        st.caption("📉 Inercia vs Optimización")
+        st.caption("📉 Tendencia Actual vs Optimización")
         st.dataframe(res["comparativa"], use_container_width=True, hide_index=True)
         st.caption("💰 Balance")
         st.dataframe(res["balance"], use_container_width=True, hide_index=True)
@@ -227,6 +229,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
 
             with open(p, "rb") as f: st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
