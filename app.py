@@ -5,18 +5,9 @@ from utils.calculos import procesar_datos
 from utils.pdf_generator import generar_pdf
 
 
-from utils.auth import login_screen, cerrar_sesion
-
-# Verificar login
-if "usuario" not in st.session_state:
-    login_screen()
-    st.stop()
-
-
 st.set_page_config(page_title="Control Obra", layout="wide")
 
 from auth import autenticar, registrar_usuario, cargar_usuarios, guardar_usuarios
-
 # --- LOGIN / REGISTRO ---
 if "user" not in st.session_state:
     st.session_state.user = None
@@ -72,6 +63,11 @@ with st.sidebar:
     if os.path.exists("logo.png"): st.image("logo.png", width=180)
     else: st.header("🏗️ Constructora")
     st.divider()
+    st.sidebar.divider()
+if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
+    st.session_state.user = None
+    st.experimental_rerun()
+
     st.subheader("Portafolio")
     nombre = st.text_input("Nuevo Proyecto:")
     if st.button("Crear / Cargar", use_container_width=True):
@@ -286,6 +282,7 @@ if "proyecto_items" not in st.session_state:
 
 # Guardar cada vez que cambia algo
 guardar_proyectos_google(user_email, st.session_state.proyecto_items)
+
 
 
 
