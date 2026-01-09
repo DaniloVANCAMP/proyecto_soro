@@ -121,32 +121,31 @@ st.session_state.proyecto_items[item_id]["params"] = {
     "tiempo_cargue": t_cargue, "tiempo_transporte": t_ciclo, "capacidad_volqueta": cap_volq
 }
 
-# 2. ARCHIVOS
+# --- 2. ARCHIVOS ---
 st.divider()
 st.markdown("#### 2. Bitácora")
-CARPETA_INPUT = "input"
-nombre_safe = "".join([c for c in item_id if c.isalnum() or c in (' ', '-', '_')]).strip()
-NOMBRE_ARCHIVO = f"Bitacora_{nombre_safe}.xlsx"
-RUTA_COMPLETA = os.path.join(CARPETA_INPUT, NOMBRE_ARCHIVO)
 
-if not os.path.exists(CARPETA_INPUT): os.makedirs(CARPETA_INPUT)
+# Simplificamos: Lectura directa sin guardar en carpetas (Evita el error 404)
+archivo_cargado = st.file_uploader("Cargar Bitácora (Excel)", type=["xlsx"])
 
-c1, c2 = st.columns([1, 2])
-with c1:
-    up = st.file_uploader("Cargar", type=["xlsx"], label_visibility="collapsed")
-    if up:
-        with open(RUTA_COMPLETA, "wb") as f: f.write(up.getbuffer())
-        st.success("✅"); st.rerun()
+if archivo_cargado is not None:
+    try:
+        # Leemos el archivo directamente de la memoria
+        # IMPORTANTE: Asegúrate de que tu Excel tenga una hoja llamada "Bitacora"
+        df_leido = pd.read_excel(archivo_cargado, sheet_name="Bitacora")
+        
+        # Lo guardamos en la sesión
+        st.session_state.proyecto_items[item_id]["bitacora"] = df_leido
+        st.success(f"✅ Archivo cargado correctamente: {len(df_leido)} registros")
+        
+    except ValueError:
+        st.error("❌ Error: No encontré la hoja llamada 'Bitacora'.")
+        st.info("Por favor revisa que la pestaña inferior de tu Excel se llame 'Bitacora'.")
+    except Exception as e:
+        st.error(f"❌ Error inesperado: {e}")
 
-with c2:
-    if os.path.exists(RUTA_COMPLETA):
-        try:
-            st.session_state.proyecto_items[item_id]["bitacora"] = pd.read_excel(RUTA_COMPLETA, sheet_name="Bitacora")
-            st.info(f"📂 Archivo: **{NOMBRE_ARCHIVO}**")
-        except: st.error("Error archivo.")
-    else: st.warning("Sube archivo.")
-
-# 3. RESULTADOS
+# --- 3. RESULTADOS ---
+# El resto del código sigue igual, solo cambiamos la condición del if:
 if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
     res = procesar_datos(st.session_state.proyecto_items[item_id]["params"], st.session_state.proyecto_items[item_id]["bitacora"])
     
@@ -177,4 +176,5 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
         cfg = {"logo": "logo.png", "color": rgb_color}
         if st.button("📄 PDF", type="primary", use_container_width=True):
             p = generar_pdf(res, item_id, cfg)
+
             with open(p, "rb") as f: st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
