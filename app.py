@@ -175,19 +175,46 @@ with tab5:
     with c2: max_mae = st.number_input("Max Mae", value=3, min_value=1)
     with c3: max_ret = st.number_input("Max Retro", value=1, min_value=0)
 
-# Guardar
+# --- GUARDADO DE PARÁMETROS ---
+# Actualizamos el diccionario con las variables correctas
 st.session_state.proyecto_items[item_id]["params"] = {
-    "salario_ingeniero": s_ing, "jornal_ayudante": j_ayu, "jornal_maestro": j_mae,
-    "alim_diaria": alim, "mq_retroexcavadora": c_retro, "mq_rotomartillo": c_roto,
-    "ancho": ancho, "profundidad": prof, "meta_metros": meta, "precio_contrato": precio,
-    "dias_estipulados": dias_est, "clima_proyectado": clima_p,
-    "arriendo_bodega": arr_bod, "arriendo_vivienda": arr_viv,
-    "factor_esponjamiento": factor_esp, "pct_imprevistos": pct_imp / 100.0,
-    "limite_densidad": 10, "max_ayudantes": max_ayu, "max_maestros": max_mae, "max_retro": max_ret,
-    "costo_pajarita": c_pajarita, "costo_viaje": c_viaje,
-    "tiempo_cargue": t_cargue, "tiempo_transporte": t_ciclo, "capacidad_volqueta": cap_volq
+    # Variables de Contrato y Clima
+    "precio_contrato": precio,
+    "meta_metros": meta,
+    "dias_estipulados": dias_est,
+    "pct_imprevistos": pct_imp / 100.0,
+    
+    # AQUÍ ESTABA EL ERROR: Ahora usamos 'clima_calculado' en vez de 'clima_p'
+    "clima_proyectado": clima_calculado, 
+    
+    # Variables Operativas (Tab 2)
+    "salario_ingeniero": s_ing, 
+    "jornal_ayudante": j_ayu, 
+    "jornal_maestro": j_mae,
+    "alim_diaria": alim, 
+    "mq_retroexcavadora": c_retro, 
+    "mq_rotomartillo": c_roto,
+    "factor_esponjamiento": factor_esp,
+    "ancho": ancho, 
+    "profundidad": prof,
+    
+    # Variables Admin (Tab 3)
+    "arriendo_bodega": arr_bod, 
+    "arriendo_vivienda": arr_viv,
+    
+    # Logística (Tab 4)
+    "costo_pajarita": c_pajarita, 
+    "costo_viaje": c_viaje,
+    "tiempo_cargue": t_cargue, 
+    "tiempo_transporte": t_ciclo, 
+    "capacidad_volqueta": cap_volq,
+    
+    # Límites (Tab 5)
+    "limite_densidad": 10, 
+    "max_ayudantes": max_ayu, 
+    "max_maestros": max_mae, 
+    "max_retro": max_ret
 }
-
 # --- 2. ARCHIVOS ---
 st.divider()
 st.markdown("#### 2. Bitácora")
@@ -245,5 +272,6 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
 
             with open(p, "rb") as f: st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
