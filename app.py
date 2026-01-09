@@ -13,7 +13,15 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 if not st.session_state.user:
-    st.title("🔐 Acceso al Control de Obra")
+    st.markdown(
+    """
+    <div style='text-align:center; padding-top: 120px;'>
+        <h1 style='font-size: 28px; color:#004c91;'>🔐 Acceso al Control de Obra</h1>
+        <p style='color:#666;'>Por favor inicia sesión o crea tu cuenta</p>
+    </div>
+    """, unsafe_allow_html=True
+)
+
 
     tab_login, tab_signup = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
 
@@ -299,6 +307,7 @@ if "proyecto_items" not in st.session_state:
 
 # Guardar cada vez que cambia algo
 guardar_proyectos_google(user_email, st.session_state.proyecto_items)
+
 
 
 
