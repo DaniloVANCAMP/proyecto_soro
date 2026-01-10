@@ -5,7 +5,12 @@ import pyrebase
 # Inicializa Firebase con la configuración del secrets
 # -------------------------------------------------------
 def inicializar_firebase():
-    firebase_config = st.secrets["firebase"]
+    firebase_config = dict(st.secrets["firebase"])  # 🔹 Crea copia editable
+
+    # Evita error si falta databaseURL
+    if "databaseURL" not in firebase_config:
+        firebase_config["databaseURL"] = ""
+
     firebase = pyrebase.initialize_app(firebase_config)
     return firebase.auth()
 
@@ -19,7 +24,7 @@ def login_con_correo(email, password):
         guardar_usuario(user)
         return True
     except Exception as e:
-        st.error("❌ Error al iniciar sesión.")
+        st.error("❌ Error al iniciar sesión. Verifica tus credenciales.")
         st.write(e)
         return False
 
@@ -54,3 +59,4 @@ def guardar_usuario(datos_usuario):
 def cerrar_sesion():
     st.session_state.user = None
     st.success("👋 Sesión cerrada correctamente.")
+
