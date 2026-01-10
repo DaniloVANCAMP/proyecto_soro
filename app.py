@@ -98,7 +98,10 @@ if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_wi
 # --- BOTÓN DE CERRAR SESIÓN ---
 st.sidebar.divider()
 if st.sidebar.button("🚪 Cerrar sesión", key="logout", use_container_width=True):
-    cerrar_sesion()
+    for key in ["user", "drive_credentials", "drive_service"]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.experimental_rerun()
 
 # -------------------------------------------------------------------------------------
 # CARGA Y SINCRONIZACIÓN DE PROYECTOS
@@ -331,6 +334,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
