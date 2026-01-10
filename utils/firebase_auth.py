@@ -2,82 +2,73 @@ import streamlit as st
 import requests
 import urllib.parse
 
+# Configuración base
+def get_config():
+    return st.secrets["web"]
+
+def get_redirect_uri():
+    return st.secrets["server"]["redirect_uri"]
+
 # -------------------------------------------------------
-# 1. Generar el Link de Login (Sin intermediarios)
+# A. URL PARA SOLO ENTRAR (Login Básico)
 # -------------------------------------------------------
-def login_con_google():
-    # Datos de configuración
-    client_id = st.secrets["web"]["client_id"]
-    # Usamos la dirección de tu app como destino
-    redirect_uri = st.secrets["server"]["redirect_uri"]
-    
-    # Construimos la URL de Google
+def get_login_url():
     params = {
-        "client_id": client_id,
-        "redirect_uri": redirect_uri,
+        "client_id": get_config()["client_id"],
+        "redirect_uri": get_redirect_uri(),
         "response_type": "code",
-        "scope": "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
+        "scope": "email profile",  # SOLO pedimos identidad
         "access_type": "online",
         "prompt": "select_account"
     }
-    
-    auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
-    
-    st.markdown(f"""
-        <div style="text-align: center; margin-top: 20px;">
-            <a href="{auth_url}" target="_self" style="
-                background-color: #ffffff; 
-                color: #333; 
-                padding: 12px 25px; 
-                text-decoration: none; 
-                border-radius: 5px; 
-                border: 1px solid #ddd; 
-                font-family: sans-serif; 
-                font-weight: bold;
-                display: inline-flex;
-                align-items: center;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" 
-                     style="width: 20px; margin-right: 10px;">
-                Iniciar sesión con Google
-            </a>
-        </div>
-    """, unsafe_allow_html=True)
+    return f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
 
 # -------------------------------------------------------
-# 2. Canjear el código por los datos del usuario
+# B. URL PARA VINCULAR DRIVE (Permisos extra)
 # -------------------------------------------------------
-def intercambiar_codigo_por_usuario(code):
-    # Datos para el canje
+def get_drive_connect_url():
+    params = {
+        "client_id": get_config()["client_id"],
+        "redirect_uri": get_redirect_uri(),
+        "response_type": "code",
+        "scope": "https://www.googleapis.com/auth/drive.file", # Pedimos DRIVE
+        "access_type": "offline", # Importante para poder usarlo después
+        "prompt": "consent select_account"
+    }
+    return f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+
+# -------------------------------------------------------
+# C. CANJEAR CÓDIGO (Sirve para ambos casos)
+# -------------------------------------------------------
+def canjear_codigo(code):
     token_url = "https://oauth2.googleapis.com/token"
     payload = {
-        "client_id": st.secrets["web"]["client_id"],
-        "client_secret": st.secrets["web"]["client_secret"],
+        "client_id": get_config()["client_id"],
+        "client_secret": get_config()["client_secret"],
         "code": code,
         "grant_type": "authorization_code",
-        "redirect_uri": st.secrets["server"]["redirect_uri"]
+        "redirect_uri": get_redirect_uri()
     }
     
-    # A. Pedir el Token
-    res_token = requests.post(token_url, data=payload)
-    if res_token.status_code != 200:
-        st.error(f"Error obteniendo token: {res_token.text}")
+    response = requests.post(token_url, data=payload)
+    if response.status_code != 200:
+        st.error(f"Error canjeando código: {response.text}")
         return None
-        
-    tokens = res_token.json()
-    access_token = tokens.get("access_token")
-    
-    # B. Pedir los datos del usuario con ese Token
-    user_info_url = "https://www.googleapis.com/oauth2/v2/userinfo"
+    return response.json()
+
+# -------------------------------------------------------
+# D. OBTENER INFO DEL USUARIO
+# -------------------------------------------------------
+def obtener_info_usuario(access_token):
+    url = "https://www.googleapis.com/oauth2/v2/userinfo"
     headers = {"Authorization": f"Bearer {access_token}"}
-    res_user = requests.get(user_info_url, headers=headers)
-    
-    if res_user.status_code != 200:
-        st.error("Error obteniendo datos del usuario")
-        return None
-        
-    return res_user.json()  # Devuelve {email: ..., name: ..., picture: ...}
+    res = requests.get(url, headers=headers)
+    if res.status_code == 200:
+        return res.json()
+    return None
 
 def cerrar_sesion():
     st.session_state.user = None
-    st.success("👋 Sesión cerrada")
+    if "drive_creds" in st.session_state:
+        del st.session_state["drive_creds"]
+    st.rerun()
