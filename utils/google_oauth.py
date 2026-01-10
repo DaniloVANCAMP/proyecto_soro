@@ -34,8 +34,17 @@ def obtener_servicio_drive():
                 "client_secret": creds.client_secret,
                 "scopes": creds.scopes,
             }
-            st.success("✅ Autenticado con Google Drive correctamente.")
-            st.query_params.clear()  # Limpia los parámetros de la URL
+           st.success("✅ Autenticado con Google Drive correctamente.")
+
+# --- No forzar un rerun inmediato ---
+# Limpia la URL del parámetro ?code= para no volver a este bloque
+           st.query_params.clear()
+
+# Restaura la sesión del usuario si se estaba autenticando
+          if "auth_in_progress" in st.session_state:
+              st.session_state.user = st.session_state.auth_in_progress
+              st.session_state.auth_in_progress = None
+
 
         # 3️⃣ Si ya tenemos credenciales en la sesión
         elif "credentials" in st.session_state:
