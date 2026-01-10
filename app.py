@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import json
+from utils.firebase_auth import login_con_google, intercambiar_codigo_por_usuario, cerrar_sesion
 
 # --- IMPORTS CON MANEJO DE ERRORES ---
 try:
@@ -39,51 +40,34 @@ tbody th {display:none}
 # GESTIÓN DE SESIÓN Y LOGIN
 # -------------------------------------------------------------------------------------
 
-# Inicializa variable de sesión si no existe
-if "user" not in st.session_state:
-    st.session_state.user = None
+# Inicializa variable de sesión
+if "user" not in st.session_state: st.session_state.user = None
 
-# --- LÓGICA DE LOGIN ---
-# Si no hay usuario en sesión, mostramos el login
-if not st.session_state.user:
-    # Intentamos recuperar sesión desde un archivo temporal (parche para OAuth)
-    AUTH_FILE = "temp_user.json"
-    if os.path.exists(AUTH_FILE):
-        try:
-            with open(AUTH_FILE, "r") as f:
-                data = json.load(f)
-            st.session_state.user = data.get("email")
-            st.session_state["credentials"] = data.get("credentials", {})
-            # Eliminamos el archivo para limpieza
-            os.remove(AUTH_FILE) 
-            st.rerun() # Recargamos para que detecte el usuario
-        except Exception:
-            pass
-
-    # Si sigue sin haber usuario, mostrar pantalla de Login
-    if not st.session_state.user:
-        st.markdown("""
-        <div style='
-            text-align:center;
-            padding-top: 80px;
-            max-width: 450px;
-            margin: auto;
-            background-color: rgba(255,255,255,0.93);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0px 3px 10px rgba(0,0,0,0.2);
-        '>
-            <h1 style='font-size: 24px; color:#004c91;'>🔐 Acceso al Control de Obra</h1>
-            <p style='color:#666;'>Inicia sesión con tu cuenta de Google</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Llamamos a la función de Firebase Auth
-        login_con_google()
-        
-        # Detenemos la ejecución aquí hasta que se loguee
-        st.stop()
+# --- A. VERIFICAR SI VIENE DE GOOGLE (CALLBACK) ---
+# Si la URL trae un código (?code=...), significa que Google nos mandó de vuelta
+if not st.session_state.user and "code" in st.query_params:
+    code = st.query_params["code"]
     
+    # Intentamos canjear ese código por el usuario
+    datos_usuario = intercambiar_codigo_por_usuario(code)
+    
+    if datos_usuario:
+        st.session_state.user = datos_usuario["email"]
+        # Limpiamos la URL para que no quede el código ahí feo
+        st.query_params.clear()
+        st.rerun()
+
+# --- B. SI NO ESTÁ LOGUEADO, MOSTRAR BOTÓN ---
+if not st.session_state.user:
+    st.markdown("""
+    <div style='text-align:center; padding-top: 50px;'>
+        <h1 style='color:#004c91;'>🔐 Control de Obra</h1>
+        <p>Acceso seguro para personal autorizado</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    login_con_google()  # Muestra el botón nuevo
+    st.stop()           # Detiene la app aquí hasta que se loguee    
 # -------------------------------------------------------------------------------------
 # USUARIO AUTENTICADO
 # -------------------------------------------------------------------------------------
@@ -341,6 +325,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
