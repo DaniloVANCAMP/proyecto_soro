@@ -10,7 +10,8 @@ google-auth
 google-auth-oauthlib
 google-auth-httplib2
 google-api-python-client
-pyrebase5
+import pyrebase5 as pyrebase
+
 
 
 #python -m streamlit run app.py
@@ -18,5 +19,6 @@ pyrebase5
 
 
 # OJO FALTA VERIFICACION INICIAL(verificación oficial)
+
 
 
