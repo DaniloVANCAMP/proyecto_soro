@@ -26,7 +26,6 @@ section.main > div {
 }
 </style>
 """, unsafe_allow_html=True)
-
 # -------------------------------------------------------------------------------------
 # LOGIN Y REGISTRO
 # -------------------------------------------------------------------------------------
@@ -63,12 +62,11 @@ if not st.session_state.user:
         email = st.text_input("Correo")
         password = st.text_input("Contraseña", type="password")
         if st.button("Entrar", use_container_width=True):
-         if autenticar(email, password):
-           st.session_state.user = email
-           st.session_state.auth_in_progress = None  # 🧹 Limpia variable temporal
-           st.success("✅ Inicio de sesión exitoso")
-           st.rerun()
-
+            if autenticar(email, password):
+                st.session_state.user = email
+                st.session_state.auth_in_progress = None  # 🧹 Limpieza
+                st.success("✅ Inicio de sesión exitoso")
+                st.rerun()
             else:
                 st.error("❌ Correo no autorizado o credenciales incorrectas.")
 
@@ -83,8 +81,6 @@ if not st.session_state.user:
                 st.warning(msg)
 
     st.stop()  # 👈 Solo se ejecuta si el usuario NO ha iniciado sesión
-
-
 # -------------------------------------------------------------------------------------
 # USUARIO AUTENTICADO
 # -------------------------------------------------------------------------------------
@@ -343,6 +339,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
