@@ -7,6 +7,7 @@ from utils.pdf_generator import generar_pdf
 from utils.auth import autenticar, registrar_usuario
 # from utils.google_sync import guardar_proyectos_google, cargar_proyectos_google
 from utils.google_oauth import obtener_servicio_drive
+from utils.firebase_auth import login_con_google, cerrar_sesion
 
 # -------------------------------------------------------------------------------------
 # CONFIGURACIÓN GENERAL
@@ -28,18 +29,15 @@ section.main > div {
 </style>
 """, unsafe_allow_html=True)
 # -------------------------------------------------------------------------------------
-# LOGIN Y REGISTRO
+# LOGIN CON GOOGLE (FIREBASE AUTH)
 # -------------------------------------------------------------------------------------
+
+# Inicializa variable de sesión
 if "user" not in st.session_state:
     st.session_state.user = None
 
-# --- ⚙️ Si estamos volviendo del login de Google (tiene ?code= en la URL), no cerrar sesión ---
-if "code" in st.query_params:
-    if "auth_in_progress" in st.session_state:
-        st.session_state.user = st.session_state.auth_in_progress
-
+# --- Si el usuario NO ha iniciado sesión ---
 if not st.session_state.user:
-    # Pantalla de inicio centrada
     st.markdown("""
     <div style='
         text-align:center;
@@ -52,40 +50,17 @@ if not st.session_state.user:
         box-shadow: 0px 3px 10px rgba(0,0,0,0.2);
     '>
         <h1 style='font-size: 24px; color:#004c91;'>🔐 Acceso al Control de Obra</h1>
-        <p style='color:#666;'>Inicia sesión con tu cuenta autorizada</p>
+        <p style='color:#666;'>Inicia sesión con tu cuenta de Google</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- LOGIN / REGISTRO ---
-    tab_login, tab_signup = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
+    login_con_google()
+    st.stop()
 
-    with tab_login:
-        email = st.text_input("Correo")
-        password = st.text_input("Contraseña", type="password")
-        if st.button("Entrar", use_container_width=True):
-            if autenticar(email, password):
-                st.session_state.user = email
-                st.session_state.auth_in_progress = None  # 🧹 Limpieza
-                st.success("✅ Inicio de sesión exitoso")
-                st.rerun()
-            else:
-                st.error("❌ Correo no autorizado o credenciales incorrectas.")
-
-    with tab_signup:
-        new_email = st.text_input("Correo Nuevo")
-        new_pass = st.text_input("Contraseña Nueva", type="password")
-        if st.button("Registrarse", use_container_width=True):
-            ok, msg = registrar_usuario(new_email, new_pass)
-            if ok:
-                st.success(msg)
-            else:
-                st.warning(msg)
-
-    st.stop()  # 👈 Solo se ejecuta si el usuario NO ha iniciado sesión
 # -------------------------------------------------------------------------------------
 # USUARIO AUTENTICADO
 # -------------------------------------------------------------------------------------
-user_email = st.session_state.user
+user_email = st.session_state.user["email"]
 st.sidebar.success(f"👤 {user_email}")
 
 # --- 🔗 CONEXIÓN CON GOOGLE DRIVE ---
@@ -93,7 +68,7 @@ st.markdown("### 📂 Conecta tu Google Drive")
 
 AUTH_FILE = "temp_user.json"
 
-# --- Si venimos del callback de Google (tiene ?code= en la URL) ---
+# --- Si venimos del callback de Google Drive (tiene ?code= en la URL) ---
 if "code" in st.query_params:
     if os.path.exists(AUTH_FILE):
         with open(AUTH_FILE, "r") as f:
@@ -121,6 +96,11 @@ if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_wi
     else:
         st.info("🔄 Autoriza el acceso en la nueva pestaña y vuelve aquí.")
 
+# --- BOTÓN DE CERRAR SESIÓN ---
+st.sidebar.divider()
+if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
+    cerrar_sesion()
+    st.experimental_rerun()
 # -------------------------------------------------------------------------------------
 # CARGA Y SINCRONIZACIÓN DE PROYECTOS
 # -------------------------------------------------------------------------------------
@@ -352,6 +332,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
