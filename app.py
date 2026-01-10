@@ -2,116 +2,112 @@ import streamlit as st
 import pandas as pd
 import os
 import json
-
-# --- IMPORTS CON MANEJO DE ERRORES ---
-try:
-    from utils.calculos import procesar_datos
-    from utils.pdf_generator import generar_pdf
-    # from utils.auth import autenticar, registrar_usuario (Ya no usamos el local)
-    from utils.google_oauth import obtener_servicio_drive
-    from utils.firebase_auth import login_con_google, cerrar_sesion
-    
-    # NUEVO: Importamos la base de datos
-    from utils.firestore_db import guardar_usuario_db, obtener_usuario_db
-except ImportError as e:
-    st.error(f"⚠️ Error importando módulos: {e}")
-    st.stop()
+from utils.calculos import procesar_datos
+from utils.pdf_generator import generar_pdf
+from utils.auth import autenticar, registrar_usuario
+# from utils.google_sync import guardar_proyectos_google, cargar_proyectos_google
+from utils.google_oauth import obtener_servicio_drive
+from utils.firebase_auth import login_con_correo, registrar_usuario, cerrar_sesion
 
 # -------------------------------------------------------------------------------------
 # CONFIGURACIÓN GENERAL
 # -------------------------------------------------------------------------------------
 st.set_page_config(page_title="Control de Obra", layout="wide")
 
-# 🌆 Estilos CSS
+# 🌆 Fondo animado o imagen (puedes reemplazar "obra.gif" por tu propio archivo)
 st.markdown("""
 <style>
-.block-container {padding-top: 1rem; padding-bottom: 2rem;}
-h1 {font-size: 1.5rem !important; font-weight: 700; color: #1f1f1f; margin-bottom: 0.5rem;}
-h2 {font-size: 1.2rem !important; font-weight: 600; padding-top: 1rem;}
-.stTable {font-size: 0.85rem;}
-/* Ocultar índices de tablas */
-thead tr th:first-child {display:none}
-tbody th {display:none}
+body {
+    background: url("obra.gif") no-repeat center center fixed;
+    background-size: cover;
+}
+section.main > div {
+    background-color: rgba(255,255,255,0.9);
+    padding: 10px;
+    border-radius: 15px;
+}
 </style>
 """, unsafe_allow_html=True)
-
 # -------------------------------------------------------------------------------------
-# GESTIÓN DE SESIÓN Y LOGIN
+# LOGIN CON GOOGLE (FIREBASE AUTH)
 # -------------------------------------------------------------------------------------
-
-# Inicializa variable de sesión si no existe
 if "user" not in st.session_state:
     st.session_state.user = None
 
-# --- LÓGICA DE LOGIN ---
-# Si no hay usuario en sesión, mostramos el login
+# --- Si el usuario NO ha iniciado sesión ---
 if not st.session_state.user:
-    # Intentamos recuperar sesión desde un archivo temporal (parche para OAuth)
-    AUTH_FILE = "temp_user.json"
-    if os.path.exists(AUTH_FILE):
-        try:
-            with open(AUTH_FILE, "r") as f:
-                data = json.load(f)
-            st.session_state.user = data.get("email")
-            st.session_state["credentials"] = data.get("credentials", {})
-            # Eliminamos el archivo para limpieza
-            os.remove(AUTH_FILE) 
-            st.rerun() # Recargamos para que detecte el usuario
-        except Exception:
-            pass
+    st.markdown("""
+    <div style='
+        text-align:center;
+        padding-top: 80px;
+        max-width: 450px;
+        margin: auto;
+        background-color: rgba(255,255,255,0.93);
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0px 3px 10px rgba(0,0,0,0.2);
+    '>
+        <h1 style='font-size: 24px; color:#004c91;'>🔐 Acceso al Control de Obra</h1>
+        <p style='color:#666;'>Inicia sesión con tu cuenta autorizada</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Si sigue sin haber usuario, mostrar pantalla de Login
-    if not st.session_state.user:
-        st.markdown("""
-        <div style='
-            text-align:center;
-            padding-top: 80px;
-            max-width: 450px;
-            margin: auto;
-            background-color: rgba(255,255,255,0.93);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0px 3px 10px rgba(0,0,0,0.2);
-        '>
-            <h1 style='font-size: 24px; color:#004c91;'>🔐 Acceso al Control de Obra</h1>
-            <p style='color:#666;'>Inicia sesión con tu cuenta de Google</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Llamamos a la función de Firebase Auth
-        login_con_google()
-        
-        # Detenemos la ejecución aquí hasta que se loguee
-        st.stop()
-    
+    # --- LOGIN / REGISTRO ---
+    tab_login, tab_signup = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
+
+    with tab_login:
+        email = st.text_input("Correo")
+        password = st.text_input("Contraseña", type="password")
+        if st.button("Entrar", use_container_width=True):
+            if login_con_correo(email, password):
+                st.success("✅ Inicio de sesión exitoso")
+                st.rerun()
+            else:
+                st.error("❌ Credenciales incorrectas o error al iniciar sesión.")
+
+    with tab_signup:
+        new_email = st.text_input("Correo Nuevo")
+        new_pass = st.text_input("Contraseña Nueva", type="password")
+        if st.button("Registrarse", use_container_width=True):
+            ok, msg = registrar_usuario(new_email, new_pass)
+            if ok:
+                st.success(msg)
+            else:
+                st.warning(msg)
+
+    st.stop()
+
+
 # -------------------------------------------------------------------------------------
 # USUARIO AUTENTICADO
 # -------------------------------------------------------------------------------------
-user_email = st.session_state.user
+user_email = st.session_state.user["email"]
 st.sidebar.success(f"👤 {user_email}")
-
-# --- GUARDAR USUARIO EN BASE DE DATOS (NUEVO) ---
-# Cada vez que entra, actualizamos su registro en Firestore
-try:
-    guardar_usuario_db({
-        "email": user_email,
-        "ultimo_acceso": pd.Timestamp.now().isoformat()
-    })
-except Exception as e:
-    # No detenemos la app si falla la DB, solo avisamos en consola
-    print(f"Error guardando en DB: {e}")
 
 # --- 🔗 CONEXIÓN CON GOOGLE DRIVE ---
 st.markdown("### 📂 Conecta tu Google Drive")
 
 AUTH_FILE = "temp_user.json"
 
+# --- Si venimos del callback de Google Drive (tiene ?code= en la URL) ---
+if "code" in st.query_params:
+    if os.path.exists(AUTH_FILE):
+        with open(AUTH_FILE, "r") as f:
+            data = json.load(f)
+        st.session_state.user = data["email"]
+        st.session_state["credentials"] = data.get("credentials", {})
+        st.success(f"✅ Sesión restaurada: {st.session_state.user}")
+        os.remove(AUTH_FILE)
+        st.query_params.clear()
+
 # --- Botón para conectar ---
 if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_width=True):
-    # Guardamos el estado actual en un archivo temp antes de irnos a Google
+    # Guarda usuario actual y posibles credenciales
     data = {"email": st.session_state.user, "credentials": st.session_state.get("credentials", {})}
     with open(AUTH_FILE, "w") as f:
         json.dump(data, f)
+
+    st.session_state.auth_in_progress = st.session_state.user
 
     with st.spinner("Conectando con Google Drive..."):
         drive_service = obtener_servicio_drive()
@@ -121,31 +117,40 @@ if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_wi
     else:
         st.info("🔄 Autoriza el acceso en la nueva pestaña y vuelve aquí.")
 
-# --- Recuperar servicio si ya hay credenciales ---
-if "credentials" in st.session_state and st.session_state["credentials"]:
-    try:
-        drive_service = obtener_servicio_drive()
-    except:
-        drive_service = None
-
 # --- BOTÓN DE CERRAR SESIÓN ---
 st.sidebar.divider()
 if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
     cerrar_sesion()
-    if os.path.exists(AUTH_FILE): os.remove(AUTH_FILE)
-    st.rerun()
+    st.experimental_rerun()
+# -------------------------------------------------------------------------------------
+# CARGA Y SINCRONIZACIÓN DE PROYECTOS
+# -------------------------------------------------------------------------------------
+#if "proyecto_items" not in st.session_state:
+   # st.session_state.proyecto_items = cargar_proyectos_google(user_email)
+
+#guardar_proyectos_google(user_email, st.session_state.proyecto_items)
 
 # -------------------------------------------------------------------------------------
 # INTERFAZ PRINCIPAL
 # -------------------------------------------------------------------------------------
+st.markdown("""
+<style>
+.block-container {padding-top: 1rem; padding-bottom: 2rem;}
+h1 {font-size: 1.5rem !important; font-weight: 700; color: #1f1f1f; margin-bottom: 0.5rem;}
+h2 {font-size: 1.2rem !important; font-weight: 600; padding-top: 1rem;}
+.stTable {font-size: 0.85rem;}
+thead tr th:first-child {display:none}
+tbody th {display:none}
+</style>
+""", unsafe_allow_html=True)
 
-# Variables iniciales del proyecto
+# Variables iniciales
 if "proyecto_items" not in st.session_state: st.session_state.proyecto_items = {}
 if "item_actual" not in st.session_state: st.session_state.item_actual = None
 rgb_color = (0, 51, 102)
 
 # -------------------------------------------------------------------------------------
-# SIDEBAR (Menú Lateral)
+# SIDEBAR
 # -------------------------------------------------------------------------------------
 with st.sidebar:
     if os.path.exists("logo.png"): 
@@ -155,8 +160,6 @@ with st.sidebar:
     
     st.divider()
     st.subheader("Portafolio")
-    
-    # Crear nuevo proyecto
     nombre = st.text_input("Nuevo Proyecto:")
     if st.button("Crear / Cargar", use_container_width=True):
         if nombre:
@@ -164,7 +167,6 @@ with st.sidebar:
                 st.session_state.proyecto_items[nombre] = {"params": {}, "bitacora": None}
             st.session_state.item_actual = nombre
     
-    # Selector de proyectos existentes
     if st.session_state.proyecto_items:
         st.session_state.item_actual = st.selectbox("Proyecto Activo:", list(st.session_state.proyecto_items.keys()))
     
@@ -175,7 +177,7 @@ with st.sidebar:
         rgb_color = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
 
 # -------------------------------------------------------------------------------------
-# PANTALLA DE BIENVENIDA (Si no hay proyecto seleccionado)
+# PANTALLA DE BIENVENIDA
 # -------------------------------------------------------------------------------------
 if not st.session_state.item_actual:
     st.write("") 
@@ -192,10 +194,11 @@ if not st.session_state.item_actual:
                 y presiona el botón <b>'Crear / Cargar'</b>.</p>
             </div>
         """, unsafe_allow_html=True)
+        
     st.stop()
 
 # -------------------------------------------------------------------------------------
-# CONTENIDO DEL PROYECTO
+# CONTENIDO PRINCIPAL (Pestañas)
 # -------------------------------------------------------------------------------------
 item_id = st.session_state.item_actual
 st.write("") 
@@ -205,7 +208,9 @@ st.title(f"Control: {item_id}")
 st.markdown("#### 1. Configuración de Obra")
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Contrato", "🏗️ Operativo", "🏢 Admin", "Logística RCD", "🎛️ Simulación"])
 
-# === Pestaña 1: Contrato ===
+# -------------------------------------------------------------------------------------
+# Pestaña 1: Contrato
+# -------------------------------------------------------------------------------------
 with tab1:
     c1, c2, c3, c4 = st.columns(4)
     with c1: precio = st.number_input("Valor Contrato ($)", value=250000000.0, format="%.0f")
@@ -214,7 +219,9 @@ with tab1:
     with c4: pct_imp = st.number_input("% Imprevistos", value=5.0, step=0.5, format="%.1f")
     clima_p = st.slider("Factor Lluvia", 0.1, 1.0, 0.9)
 
-# === Pestaña 2: Operativo ===
+# -------------------------------------------------------------------------------------
+# Pestaña 2: Operativo
+# -------------------------------------------------------------------------------------
 with tab2:
     c1, c2 = st.columns(2)
     with c1:
@@ -237,13 +244,17 @@ with tab2:
             ancho = st.number_input("Ancho Zanja (m)", value=2.0)
             prof  = st.number_input("Profundidad (m)", value=1.2)
 
-# === Pestaña 3: Admin ===
+# -------------------------------------------------------------------------------------
+# Pestaña 3: Admin
+# -------------------------------------------------------------------------------------
 with tab3:
     c1, c2 = st.columns(2)
     with c1: arr_bod = st.number_input("Arriendo Bodega (Mes)", value=2500000.0, format="%.0f")
     with c2: arr_viv = st.number_input("Arriendo Vivienda (Mes)", value=2000000.0, format="%.0f")
 
-# === Pestaña 4: Logística ===
+# -------------------------------------------------------------------------------------
+# Pestaña 4: Logística
+# -------------------------------------------------------------------------------------
 with tab4:
     st.info("Logística")
     c1, c2, c3 = st.columns(3)
@@ -257,14 +268,18 @@ with tab4:
         cap_volq = st.number_input("Capacidad Volq (m3)", value=7.0)
         st.caption(f"Ciclo Total: {t_cargue + t_ciclo} min")
 
-# === Pestaña 5: Simulación ===
+# -------------------------------------------------------------------------------------
+# Pestaña 5: Simulación
+# -------------------------------------------------------------------------------------
 with tab5:
     c1, c2, c3 = st.columns(3)
     with c1: max_ayu = st.number_input("Max Ayu", value=15, min_value=1)
     with c2: max_mae = st.number_input("Max Mae", value=3, min_value=1)
     with c3: max_ret = st.number_input("Max Retro", value=1, min_value=0)
 
-# --- GUARDAR PARÁMETROS EN MEMORIA ---
+# -------------------------------------------------------------------------------------
+# Guardar parámetros
+# -------------------------------------------------------------------------------------
 st.session_state.proyecto_items[item_id]["params"] = {
     "salario_ingeniero": s_ing, "jornal_ayudante": j_ayu, "jornal_maestro": j_mae,
     "alim_diaria": alim, "mq_retroexcavadora": c_retro, "mq_rotomartillo": c_roto,
@@ -278,7 +293,7 @@ st.session_state.proyecto_items[item_id]["params"] = {
 }
 
 # -------------------------------------------------------------------------------------
-# CARGA DE BITÁCORA Y RESULTADOS
+# ARCHIVOS Y RESULTADOS
 # -------------------------------------------------------------------------------------
 st.divider()
 st.markdown("#### 2. Bitácora")
@@ -294,8 +309,7 @@ with c1:
     up = st.file_uploader("Cargar", type=["xlsx"], label_visibility="collapsed")
     if up:
         with open(RUTA_COMPLETA, "wb") as f: f.write(up.getbuffer())
-        st.success("✅ Cargado correctamente")
-        st.rerun()
+        st.success("✅ Cargado correctamente"); st.rerun()
 
 with c2:
     if os.path.exists(RUTA_COMPLETA):
@@ -305,9 +319,7 @@ with c2:
         except: st.error("Error al leer archivo.")
     else: st.warning("Sube archivo Excel con la hoja 'Bitacora'.")
 
-# --- PROCESAMIENTO Y DASHBOARD ---
 if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
-    # Llamamos a la función de cálculos
     res = procesar_datos(st.session_state.proyecto_items[item_id]["params"], st.session_state.proyecto_items[item_id]["bitacora"])
     
     st.divider()
@@ -323,6 +335,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
         st.info(f"Requieres: **{res['flota']['num_volquetas']} Volquetas** y **1 Pajarita**.")
     
     c1, c2 = st.columns(2)
+    
     with c1:
         st.caption("📉 Tendencia Actual vs Optimización")
         st.dataframe(res["comparativa"], use_container_width=True, hide_index=True)
@@ -332,7 +345,6 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
         st.caption("🏆 Top 5")
         st.dataframe(res["top5"][["Ayud", "Mae", "Retro", "Días", "Utilidad_Show"]], use_container_width=True, hide_index=True)
 
-    # --- GENERACIÓN DE PDF ---
     st.divider()
     cp, _ = st.columns([1, 3])
     with cp:
@@ -341,21 +353,6 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
