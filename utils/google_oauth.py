@@ -1,55 +1,53 @@
-# utils/google_oauth.py
 import streamlit as st
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
+import json, os
 
+# ---------------------------------------------------------------
+# Función principal: conectar y devolver el servicio de Google Drive
+# ---------------------------------------------------------------
 def obtener_servicio_drive():
-    """Autentica al usuario con OAuth 2.0 y devuelve el servicio de Google Drive"""
     try:
-        # 1️⃣ Cargar configuración desde Secrets
-        secrets = st.secrets["web"]
-        client_config = {
-            "web": {
-                "client_id": secrets["client_id"],
-                "project_id": secrets["project_id"],
-                "auth_uri": secrets["auth_uri"],
-                "token_uri": secrets["token_uri"],
-                "auth_provider_x509_cert_url": secrets["auth_provider_x509_cert_url"],
-                "client_secret": secrets["client_secret"],
-                "redirect_uris": secrets["redirect_uris"],
-                "javascript_origins": secrets["javascript_origins"]
+        # 1️⃣ Cargar la configuración del cliente desde Streamlit secrets
+        client_config = st.secrets["web"]
+
+        flow = Flow.from_client_config(
+            {"web": client_config},
+            scopes=["https://www.googleapis.com/auth/drive.file"]
+        )
+        flow.redirect_uri = client_config["redirect_uris"][0]
+
+        # 2️⃣ Si Google ya devolvió el token (en la URL)
+        query_params = st.query_params
+        if "code" in query_params:
+            code = query_params["code"]
+            flow.fetch_token(code=code)
+
+            creds = flow.credentials
+            # Guardar las credenciales en la sesión
+            st.session_state["credentials"] = {
+                "token": creds.token,
+                "refresh_token": creds.refresh_token,
+                "token_uri": creds.token_uri,
+                "client_id": creds.client_id,
+                "client_secret": creds.client_secret,
+                "scopes": creds.scopes,
             }
-        }
+            st.success("✅ Autenticado con Google Drive correctamente.")
+            st.rerun()
 
-        redirect_uri = st.secrets["server"]["redirect_uri"]
+        # 3️⃣ Si ya tenemos credenciales en la sesión
+        elif "credentials" in st.session_state:
+            creds_data = st.session_state["credentials"]
+            creds = Credentials(**creds_data)
+            return build("drive", "v3", credentials=creds)
 
-        # 2️⃣ Si ya hay credenciales, reutilízalas
-        if "google_credentials" in st.session_state:
-            creds = st.session_state.google_credentials
+        # 4️⃣ Si no hay credenciales, generar el enlace de autorización
         else:
-            flow = Flow.from_client_config(
-                client_config,
-                scopes=["https://www.googleapis.com/auth/drive.file"],
-                redirect_uri=redirect_uri
-            )
-
-            # 3️⃣ URL para autorizar
-            auth_url, _ = flow.authorization_url(prompt="consent")
-
-            st.markdown(f"🔗 [Haz clic aquí para autorizar acceso a tu Google Drive]({auth_url})")
-
-            auth_code = st.text_input("🔑 Pega aquí el código de autorización:")
-
-            if auth_code:
-                flow.fetch_token(code=auth_code)
-                creds = flow.credentials
-                st.session_state.google_credentials = creds
-                st.success("✅ Autenticación completada correctamente.")
-
-        # 4️⃣ Crear servicio si ya hay credenciales
-        if "google_credentials" in st.session_state:
-            service = build("drive", "v3", credentials=st.session_state.google_credentials)
-            return service
+            auth_url, _ = flow.authorization_url(prompt="consent", access_type="offline")
+            st.markdown(f"🔗 [Haz clic aquí para autorizar Google Drive]({auth_url})")
+            return None
 
     except Exception as e:
         st.error(f"⚠️ Error de autenticación: {e}")
