@@ -4,7 +4,7 @@ import os
 from utils.calculos import procesar_datos
 from utils.pdf_generator import generar_pdf
 from utils.auth import autenticar, registrar_usuario
-from utils.google_sync import guardar_proyectos_google, cargar_proyectos_google
+#from utils.google_sync import guardar_proyectos_google, cargar_proyectos_google
 
 # -------------------------------------------------------------------------------------
 # CONFIGURACIÓN GENERAL
@@ -78,6 +78,19 @@ if not st.session_state.user:
 user_email = st.session_state.user
 st.sidebar.success(f"👤 {user_email}")
 
+# --- CONEXIÓN CON GOOGLE DRIVE ---
+from utils.google_oauth import obtener_servicio_drive
+
+st.markdown("### 📂 Conecta tu Google Drive")
+
+if st.button("🔗 Conectar con Google Drive", use_container_width=True):
+    drive_service = obtener_servicio_drive()
+    if drive_service:
+        st.success("✅ Conectado correctamente con tu Google Drive")
+    else:
+        st.error("❌ Error al conectar con Google Drive")
+
+
 # --- Conexión con Google Drive ---
 from utils.google_oauth import obtener_servicio_drive
 
@@ -98,10 +111,10 @@ if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
 # -------------------------------------------------------------------------------------
 # CARGA Y SINCRONIZACIÓN DE PROYECTOS
 # -------------------------------------------------------------------------------------
-if "proyecto_items" not in st.session_state:
-    st.session_state.proyecto_items = cargar_proyectos_google(user_email)
+#if "proyecto_items" not in st.session_state:
+   # st.session_state.proyecto_items = cargar_proyectos_google(user_email)
 
-guardar_proyectos_google(user_email, st.session_state.proyecto_items)
+#guardar_proyectos_google(user_email, st.session_state.proyecto_items)
 
 # -------------------------------------------------------------------------------------
 # INTERFAZ PRINCIPAL
@@ -326,6 +339,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
