@@ -90,27 +90,25 @@ st.sidebar.success(f"👤 {user_email}")
 # --- 🔗 CONEXIÓN CON GOOGLE DRIVE ---
 st.markdown("### 📂 Conecta tu Google Drive")
 
-# Guardar usuario actual para restaurar después del redirect
-if "auth_in_progress" not in st.session_state:
-    st.session_state.auth_in_progress = None
+AUTH_FILE = "temp_user.json"
 
-AUTH_FILE = "temp_auth_user.txt"
-
-# --- 🔍 Si volvemos del login de Google (tiene ?code= en la URL), restaurar usuario ---
+# --- Si venimos del callback de Google (tiene ?code= en la URL) ---
 if "code" in st.query_params:
     if os.path.exists(AUTH_FILE):
         with open(AUTH_FILE, "r") as f:
-            restored_user = f.read().strip()
-        st.session_state.user = restored_user
+            data = json.load(f)
+        st.session_state.user = data["email"]
+        st.session_state["credentials"] = data.get("credentials", {})
+        st.success(f"✅ Sesión restaurada: {st.session_state.user}")
         os.remove(AUTH_FILE)
         st.query_params.clear()
-        st.success("✅ Sesión restaurada después de autenticación con Google Drive.")
 
-# --- Botón de conexión ---
+# --- Botón para conectar ---
 if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_width=True):
-    # Guardamos el usuario actual en disco
+    # Guarda usuario actual y posibles credenciales
+    data = {"email": st.session_state.user, "credentials": st.session_state.get("credentials", {})}
     with open(AUTH_FILE, "w") as f:
-        f.write(st.session_state.user)
+        json.dump(data, f)
 
     st.session_state.auth_in_progress = st.session_state.user
 
@@ -120,7 +118,8 @@ if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_wi
     if drive_service:
         st.success("✅ Conectado correctamente con tu Google Drive")
     else:
-        st.info("🔄 Sigue el enlace de autorización que aparecerá arriba.")
+        st.info("🔄 Autoriza el acceso en la nueva pestaña y vuelve aquí.")
+
 # -------------------------------------------------------------------------------------
 # CARGA Y SINCRONIZACIÓN DE PROYECTOS
 # -------------------------------------------------------------------------------------
@@ -352,6 +351,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
