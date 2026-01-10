@@ -1,5 +1,5 @@
 import streamlit as st
-import pyrebase
+import pyrebase5 as pyrebase
 
 # -------------------------------------------------------
 # Inicializa Firebase con la configuración del secrets
