@@ -72,24 +72,23 @@ if not st.session_state.user:
 
     st.stop()
 
-# -------------------------------------------------------------------------------------
-# USUARIO AUTENTICADO
-# -------------------------------------------------------------------------------------
-user_email = st.session_state.user
-st.sidebar.success(f"👤 {user_email}")
 
-# --- CONEXIÓN CON GOOGLE DRIVE ---
 from utils.google_oauth import obtener_servicio_drive
 
 st.markdown("### 📂 Conecta tu Google Drive")
 
-# Usa una clave única para evitar el error StreamlitDuplicateElementId
-if st.button("🔗 Conectar con Google Drive", key="connect_drive", use_container_width=True):
+if st.button("🔗 Conectar con Google Drive", use_container_width=True, key="connect_drive"):
     drive_service = obtener_servicio_drive()
     if drive_service:
         st.success("✅ Conectado correctamente con tu Google Drive")
     else:
         st.error("❌ Error al conectar con Google Drive")
+
+# -------------------------------------------------------------------------------------
+# USUARIO AUTENTICADO
+# -------------------------------------------------------------------------------------
+user_email = st.session_state.user
+st.sidebar.success(f"👤 {user_email}")
 
 # --- BOTÓN DE CERRAR SESIÓN ---
 st.sidebar.divider()
@@ -328,6 +327,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
