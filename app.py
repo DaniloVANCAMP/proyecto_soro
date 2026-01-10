@@ -1,14 +1,28 @@
 import streamlit as st
 import pandas as pd
 import os
+
+# --- Utilidades principales ---
 from utils.calculos import procesar_datos
 from utils.pdf_generator import generar_pdf
-from utils.auth import autenticar, registrar_usuario
-#from utils.firestore_db import obtener_servicio_drive
-from utils.firebase_auth import guardar_usuario_db, obtener_usuario_db, cerrar_sesion
 
+# --- Autenticación de usuarios básicos (login/registro local) ---
+from utils.auth import autenticar, registrar_usuario
+
+# --- Firebase (Firestore para guardar usuarios y Drive tokens) ---
+from utils.firebase_auth import guardar_usuario_db, obtener_usuario_db
+
+# --- Conexión con Google Drive (OAuth2 individual) ---
 from utils.google_oauth import obtener_servicio_drive
 
+# --- Función de cerrar sesión (definida aquí mismo) ---
+def cerrar_sesion():
+    """Cierra la sesión actual del usuario."""
+    if "user" in st.session_state:
+        del st.session_state["user"]
+    if "drive_creds" in st.session_state:
+        del st.session_state["drive_creds"]
+    st.rerun()
 
 # -------------------------------------------------------------------------------------
 # CONFIGURACIÓN GENERAL
@@ -336,6 +350,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
