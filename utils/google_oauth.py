@@ -18,15 +18,14 @@ def obtener_servicio_drive():
         )
         flow.redirect_uri = client_config["redirect_uris"][0]
 
-        # 2️⃣ Si Google ya devolvió el token (en la URL)
+     # 2️⃣ Si Google ya devolvió el token (en la URL)
         query_params = st.query_params
         if "code" in query_params:
             code = query_params["code"]
             flow.fetch_token(code=code)
-
             creds = flow.credentials
 
-            # Guardar las credenciales en la sesión
+            # Guardar las credenciales
             st.session_state["credentials"] = {
                 "token": creds.token,
                 "refresh_token": creds.refresh_token,
@@ -36,16 +35,18 @@ def obtener_servicio_drive():
                 "scopes": creds.scopes,
             }
 
-            # --- Mostrar éxito y limpiar URL ---
-            st.success("✅ Autenticado con Google Drive correctamente.")
+            # Restaurar usuario previo desde archivo temporal
+            auth_file = "temp_auth_user.txt"
+            if os.path.exists(auth_file):
+                with open(auth_file, "r") as f:
+                    prev_user = f.read().strip()
+                st.session_state.user = prev_user
+                os.remove(auth_file)
+
+            # Limpiar parámetros y mostrar mensaje
             st.query_params.clear()
+            st.success("✅ Autenticado con Google Drive correctamente.")
 
-            # --- Restaurar sesión del usuario si estaba autenticándose ---
-            if "auth_in_progress" in st.session_state:
-                st.session_state.user = st.session_state.auth_in_progress
-                st.session_state.auth_in_progress = None
-
-            # Crear servicio de Drive y devolverlo
             return build("drive", "v3", credentials=creds)
 
         # 3️⃣ Si ya tenemos credenciales en la sesión
