@@ -4,14 +4,15 @@ import os
 from utils.calculos import procesar_datos
 from utils.pdf_generator import generar_pdf
 from utils.auth import autenticar, registrar_usuario
-#from utils.google_sync import guardar_proyectos_google, cargar_proyectos_google
+# from utils.google_sync import guardar_proyectos_google, cargar_proyectos_google
+from utils.google_oauth import obtener_servicio_drive
 
 # -------------------------------------------------------------------------------------
 # CONFIGURACIÓN GENERAL
 # -------------------------------------------------------------------------------------
 st.set_page_config(page_title="Control de Obra", layout="wide")
 
-# 🌆 Fondo (puedes cambiar "obra.gif" por tu propia imagen o video animado)
+# 🌆 Fondo animado o imagen (puedes reemplazar "obra.gif" por tu propio archivo)
 st.markdown("""
 <style>
 body {
@@ -33,7 +34,7 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 if not st.session_state.user:
-    # Pantalla centrada
+    # Pantalla de inicio centrada
     st.markdown("""
     <div style='
         text-align:center;
@@ -49,32 +50,32 @@ if not st.session_state.user:
         <p style='color:#666;'>Inicia sesión con tu cuenta autorizada</p>
     </div>
     """, unsafe_allow_html=True)
-# ------------------------------
-# LOGIN / REGISTRO
-# ------------------------------
-tab_login, tab_signup = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
 
-with tab_login:
-    email = st.text_input("Correo")
-    password = st.text_input("Contraseña", type="password")
-    if st.button("Entrar", use_container_width=True):
-        if autenticar(email, password):
-            st.session_state.user = email
-            st.rerun()
-        else:
-            st.error("Correo no autorizado o credenciales incorrectas.")
+    # --- LOGIN / REGISTRO ---
+    tab_login, tab_signup = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
 
-with tab_signup:
-    new_email = st.text_input("Correo Nuevo")
-    new_pass = st.text_input("Contraseña Nueva", type="password")
-    if st.button("Registrarse", use_container_width=True):
-        ok, msg = registrar_usuario(new_email, new_pass)
-        if ok:
-            st.success(msg)
-        else:
-            st.warning(msg)
+    with tab_login:
+        email = st.text_input("Correo")
+        password = st.text_input("Contraseña", type="password")
+        if st.button("Entrar", use_container_width=True):
+            if autenticar(email, password):
+                st.session_state.user = email
+                st.success("✅ Inicio de sesión exitoso")
+                st.rerun()
+            else:
+                st.error("❌ Correo no autorizado o credenciales incorrectas.")
 
-st.stop()  # 👈 Esto detiene la ejecución si el usuario NO ha iniciado sesión
+    with tab_signup:
+        new_email = st.text_input("Correo Nuevo")
+        new_pass = st.text_input("Contraseña Nueva", type="password")
+        if st.button("Registrarse", use_container_width=True):
+            ok, msg = registrar_usuario(new_email, new_pass)
+            if ok:
+                st.success(msg)
+            else:
+                st.warning(msg)
+
+    st.stop()  # 👈 Solo se ejecuta si el usuario NO ha iniciado sesión
 
 
 # -------------------------------------------------------------------------------------
@@ -84,8 +85,6 @@ user_email = st.session_state.user
 st.sidebar.success(f"👤 {user_email}")
 
 # --- 🔗 CONEXIÓN CON GOOGLE DRIVE ---
-from utils.google_oauth import obtener_servicio_drive
-
 st.markdown("### 📂 Conecta tu Google Drive")
 
 if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_width=True):
@@ -333,6 +332,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
