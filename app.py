@@ -2,117 +2,134 @@ import streamlit as st
 import pandas as pd
 import os
 import json
+from utils.calculos import procesar_datos
+from utils.pdf_generator import generar_pdf
+from utils.auth import autenticar, registrar_usuario
+# from utils.google_sync import guardar_proyectos_google, cargar_proyectos_google
+from utils.google_oauth import obtener_servicio_drive
+from utils.firebase_auth import login_con_google, cerrar_sesion
 
-# Imports de tu proyecto
-try:
-    from utils.calculos import procesar_datos
-    from utils.pdf_generator import generar_pdf
-    from utils.google_oauth import obtener_servicio_drive # Si usas esto para subir archivos
-    from utils.firebase_auth import get_login_url, get_drive_connect_url, canjear_codigo, obtener_info_usuario, cerrar_sesion
-    from utils.firestore_db import guardar_usuario_db # Si sigues usando la BD
-except ImportError as e:
-    st.error(f"⚠️ Error de importación: {e}")
-    st.stop()
-
+# -------------------------------------------------------------------------------------
+# CONFIGURACIÓN GENERAL
+# -------------------------------------------------------------------------------------
 st.set_page_config(page_title="Control de Obra", layout="wide")
 
+# 🌆 Fondo animado o imagen (puedes reemplazar "obra.gif" por tu propio archivo)
+st.markdown("""
+<style>
+body {
+    background: url("obra.gif") no-repeat center center fixed;
+    background-size: cover;
+}
+section.main > div {
+    background-color: rgba(255,255,255,0.9);
+    padding: 10px;
+    border-radius: 15px;
+}
+</style>
+""", unsafe_allow_html=True)
 # -------------------------------------------------------------------------------------
-# LÓGICA MAESTRA DE AUTENTICACIÓN
+# LOGIN CON GOOGLE (FIREBASE AUTH)
 # -------------------------------------------------------------------------------------
-if "user" not in st.session_state: st.session_state.user = None
-if "drive_creds" not in st.session_state: st.session_state.drive_creds = None
 
-# --- CAPTURAR EL CÓDIGO QUE DEVUELVE GOOGLE ---
-if "code" in st.query_params:
-    code = st.query_params["code"]
-    
-    # Canjeamos el código por tokens (sirve para login o para drive)
-    tokens = canjear_codigo(code)
-    
-    if tokens:
-        # CASO 1: El usuario NO estaba logueado -> Es un LOGIN
-        if not st.session_state.user:
-            info = obtener_info_usuario(tokens["access_token"])
-            if info:
-                st.session_state.user = info["email"]
-                # Opcional: Guardar en Firestore
-                # guardar_usuario_db({"email": info["email"]})
-                st.success(f"¡Hola de nuevo, {info.get('name')}!")
-        
-        # CASO 2: El usuario YA estaba logueado -> Es VINCULACIÓN DE DRIVE
-        else:
-            st.session_state.drive_creds = tokens
-            st.toast("✅ Google Drive vinculado correctamente", icon="📂")
-            
-    # Limpiamos la URL
-    st.query_params.clear()
-    st.rerun()
+# Inicializa variable de sesión
+if "user" not in st.session_state:
+    st.session_state.user = None
 
-# -------------------------------------------------------------------------------------
-# PANTALLA DE LOGIN (Si no ha entrado)
-# -------------------------------------------------------------------------------------
+# --- Si el usuario NO ha iniciado sesión ---
 if not st.session_state.user:
-    st.markdown(f"""
-    <div style='text-align:center; padding-top: 50px;'>
-        <h1>🚧 Constructora Vanoy SAS</h1>
-        <p>Sistema de Control de Obra</p>
-        <br>
-        <a href="{get_login_url()}" target="_self" style="
-            background-color: #4285F4; color: white; padding: 12px 24px; 
-            text-decoration: none; border-radius: 5px; font-weight: bold;">
-            G Iniciar Sesión con Google
-        </a>
+    st.markdown("""
+    <div style='
+        text-align:center;
+        padding-top: 80px;
+        max-width: 450px;
+        margin: auto;
+        background-color: rgba(255,255,255,0.93);
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0px 3px 10px rgba(0,0,0,0.2);
+    '>
+        <h1 style='font-size: 24px; color:#004c91;'>🔐 Acceso al Control de Obra</h1>
+        <p style='color:#666;'>Inicia sesión con tu cuenta de Google</p>
     </div>
     """, unsafe_allow_html=True)
+
+    login_con_google()
     st.stop()
 
 # -------------------------------------------------------------------------------------
-# APLICACIÓN PRINCIPAL (Usuario ya adentro)
+# USUARIO AUTENTICADO
 # -------------------------------------------------------------------------------------
-usuario_actual = st.session_state.user
+user_email = st.session_state.user["email"]
+st.sidebar.success(f"👤 {user_email}")
 
-# --- SIDEBAR ---
-with st.sidebar:
-    st.write(f"👤 **{usuario_actual}**")
-    
-    st.divider()
-    
-    # --- BOTÓN PARA VINCULAR DRIVE (DENTRO DE LA APP) ---
-    if not st.session_state.drive_creds:
-        st.warning("⚠️ Drive no conectado")
-        st.markdown(f"""
-        <a href="{get_drive_connect_url()}" target="_self" style="
-            display: block; text-align: center;
-            background-color: #fff; color: #333; border: 1px solid #ccc;
-            padding: 8px; text-decoration: none; border-radius: 4px; font-size: 0.9em;">
-            🔗 Conectar Google Drive
-        </a>
-        """, unsafe_allow_html=True)
+# --- 🔗 CONEXIÓN CON GOOGLE DRIVE ---
+st.markdown("### 📂 Conecta tu Google Drive")
+
+AUTH_FILE = "temp_user.json"
+
+# --- Si venimos del callback de Google Drive (tiene ?code= en la URL) ---
+if "code" in st.query_params:
+    if os.path.exists(AUTH_FILE):
+        with open(AUTH_FILE, "r") as f:
+            data = json.load(f)
+        st.session_state.user = data["email"]
+        st.session_state["credentials"] = data.get("credentials", {})
+        st.success(f"✅ Sesión restaurada: {st.session_state.user}")
+        os.remove(AUTH_FILE)
+        st.query_params.clear()
+
+# --- Botón para conectar ---
+if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_width=True):
+    # Guarda usuario actual y posibles credenciales
+    data = {"email": st.session_state.user, "credentials": st.session_state.get("credentials", {})}
+    with open(AUTH_FILE, "w") as f:
+        json.dump(data, f)
+
+    st.session_state.auth_in_progress = st.session_state.user
+
+    with st.spinner("Conectando con Google Drive..."):
+        drive_service = obtener_servicio_drive()
+
+    if drive_service:
+        st.success("✅ Conectado correctamente con tu Google Drive")
     else:
-        st.success("✅ Drive Conectado")
-        if st.button("Desconectar Drive"):
-            st.session_state.drive_creds = None
-            st.rerun()
+        st.info("🔄 Autoriza el acceso en la nueva pestaña y vuelve aquí.")
 
-    st.divider()
-    if st.button("Cerrar Sesión"):
-        cerrar_sesion()
+# --- BOTÓN DE CERRAR SESIÓN ---
+st.sidebar.divider()
+if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
+    cerrar_sesion()
+    st.experimental_rerun()
+# -------------------------------------------------------------------------------------
+# CARGA Y SINCRONIZACIÓN DE PROYECTOS
+# -------------------------------------------------------------------------------------
+#if "proyecto_items" not in st.session_state:
+   # st.session_state.proyecto_items = cargar_proyectos_google(user_email)
 
-# --- AQUÍ VA EL RESTO DE TU LÓGICA (TABS, CÁLCULOS, ETC) ---
-st.title(f"Panel de Control")
-st.info("Bienvenido al sistema. Usa el menú lateral para gestionar tus proyectos.")
-# ... Pega aquí tus Tabs, cálculos, etc.
+#guardar_proyectos_google(user_email, st.session_state.proyecto_items)
+
 # -------------------------------------------------------------------------------------
 # INTERFAZ PRINCIPAL
 # -------------------------------------------------------------------------------------
+st.markdown("""
+<style>
+.block-container {padding-top: 1rem; padding-bottom: 2rem;}
+h1 {font-size: 1.5rem !important; font-weight: 700; color: #1f1f1f; margin-bottom: 0.5rem;}
+h2 {font-size: 1.2rem !important; font-weight: 600; padding-top: 1rem;}
+.stTable {font-size: 0.85rem;}
+thead tr th:first-child {display:none}
+tbody th {display:none}
+</style>
+""", unsafe_allow_html=True)
 
-# Variables iniciales del proyecto
+# Variables iniciales
 if "proyecto_items" not in st.session_state: st.session_state.proyecto_items = {}
 if "item_actual" not in st.session_state: st.session_state.item_actual = None
 rgb_color = (0, 51, 102)
 
 # -------------------------------------------------------------------------------------
-# SIDEBAR (Menú Lateral)
+# SIDEBAR
 # -------------------------------------------------------------------------------------
 with st.sidebar:
     if os.path.exists("logo.png"): 
@@ -122,8 +139,6 @@ with st.sidebar:
     
     st.divider()
     st.subheader("Portafolio")
-    
-    # Crear nuevo proyecto
     nombre = st.text_input("Nuevo Proyecto:")
     if st.button("Crear / Cargar", use_container_width=True):
         if nombre:
@@ -131,7 +146,6 @@ with st.sidebar:
                 st.session_state.proyecto_items[nombre] = {"params": {}, "bitacora": None}
             st.session_state.item_actual = nombre
     
-    # Selector de proyectos existentes
     if st.session_state.proyecto_items:
         st.session_state.item_actual = st.selectbox("Proyecto Activo:", list(st.session_state.proyecto_items.keys()))
     
@@ -142,7 +156,7 @@ with st.sidebar:
         rgb_color = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
 
 # -------------------------------------------------------------------------------------
-# PANTALLA DE BIENVENIDA (Si no hay proyecto seleccionado)
+# PANTALLA DE BIENVENIDA
 # -------------------------------------------------------------------------------------
 if not st.session_state.item_actual:
     st.write("") 
@@ -159,10 +173,11 @@ if not st.session_state.item_actual:
                 y presiona el botón <b>'Crear / Cargar'</b>.</p>
             </div>
         """, unsafe_allow_html=True)
+        
     st.stop()
 
 # -------------------------------------------------------------------------------------
-# CONTENIDO DEL PROYECTO
+# CONTENIDO PRINCIPAL (Pestañas)
 # -------------------------------------------------------------------------------------
 item_id = st.session_state.item_actual
 st.write("") 
@@ -172,7 +187,9 @@ st.title(f"Control: {item_id}")
 st.markdown("#### 1. Configuración de Obra")
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Contrato", "🏗️ Operativo", "🏢 Admin", "Logística RCD", "🎛️ Simulación"])
 
-# === Pestaña 1: Contrato ===
+# -------------------------------------------------------------------------------------
+# Pestaña 1: Contrato
+# -------------------------------------------------------------------------------------
 with tab1:
     c1, c2, c3, c4 = st.columns(4)
     with c1: precio = st.number_input("Valor Contrato ($)", value=250000000.0, format="%.0f")
@@ -181,7 +198,9 @@ with tab1:
     with c4: pct_imp = st.number_input("% Imprevistos", value=5.0, step=0.5, format="%.1f")
     clima_p = st.slider("Factor Lluvia", 0.1, 1.0, 0.9)
 
-# === Pestaña 2: Operativo ===
+# -------------------------------------------------------------------------------------
+# Pestaña 2: Operativo
+# -------------------------------------------------------------------------------------
 with tab2:
     c1, c2 = st.columns(2)
     with c1:
@@ -204,13 +223,17 @@ with tab2:
             ancho = st.number_input("Ancho Zanja (m)", value=2.0)
             prof  = st.number_input("Profundidad (m)", value=1.2)
 
-# === Pestaña 3: Admin ===
+# -------------------------------------------------------------------------------------
+# Pestaña 3: Admin
+# -------------------------------------------------------------------------------------
 with tab3:
     c1, c2 = st.columns(2)
     with c1: arr_bod = st.number_input("Arriendo Bodega (Mes)", value=2500000.0, format="%.0f")
     with c2: arr_viv = st.number_input("Arriendo Vivienda (Mes)", value=2000000.0, format="%.0f")
 
-# === Pestaña 4: Logística ===
+# -------------------------------------------------------------------------------------
+# Pestaña 4: Logística
+# -------------------------------------------------------------------------------------
 with tab4:
     st.info("Logística")
     c1, c2, c3 = st.columns(3)
@@ -224,14 +247,18 @@ with tab4:
         cap_volq = st.number_input("Capacidad Volq (m3)", value=7.0)
         st.caption(f"Ciclo Total: {t_cargue + t_ciclo} min")
 
-# === Pestaña 5: Simulación ===
+# -------------------------------------------------------------------------------------
+# Pestaña 5: Simulación
+# -------------------------------------------------------------------------------------
 with tab5:
     c1, c2, c3 = st.columns(3)
     with c1: max_ayu = st.number_input("Max Ayu", value=15, min_value=1)
     with c2: max_mae = st.number_input("Max Mae", value=3, min_value=1)
     with c3: max_ret = st.number_input("Max Retro", value=1, min_value=0)
 
-# --- GUARDAR PARÁMETROS EN MEMORIA ---
+# -------------------------------------------------------------------------------------
+# Guardar parámetros
+# -------------------------------------------------------------------------------------
 st.session_state.proyecto_items[item_id]["params"] = {
     "salario_ingeniero": s_ing, "jornal_ayudante": j_ayu, "jornal_maestro": j_mae,
     "alim_diaria": alim, "mq_retroexcavadora": c_retro, "mq_rotomartillo": c_roto,
@@ -245,7 +272,7 @@ st.session_state.proyecto_items[item_id]["params"] = {
 }
 
 # -------------------------------------------------------------------------------------
-# CARGA DE BITÁCORA Y RESULTADOS
+# ARCHIVOS Y RESULTADOS
 # -------------------------------------------------------------------------------------
 st.divider()
 st.markdown("#### 2. Bitácora")
@@ -261,8 +288,7 @@ with c1:
     up = st.file_uploader("Cargar", type=["xlsx"], label_visibility="collapsed")
     if up:
         with open(RUTA_COMPLETA, "wb") as f: f.write(up.getbuffer())
-        st.success("✅ Cargado correctamente")
-        st.rerun()
+        st.success("✅ Cargado correctamente"); st.rerun()
 
 with c2:
     if os.path.exists(RUTA_COMPLETA):
@@ -272,9 +298,7 @@ with c2:
         except: st.error("Error al leer archivo.")
     else: st.warning("Sube archivo Excel con la hoja 'Bitacora'.")
 
-# --- PROCESAMIENTO Y DASHBOARD ---
 if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
-    # Llamamos a la función de cálculos
     res = procesar_datos(st.session_state.proyecto_items[item_id]["params"], st.session_state.proyecto_items[item_id]["bitacora"])
     
     st.divider()
@@ -290,6 +314,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
         st.info(f"Requieres: **{res['flota']['num_volquetas']} Volquetas** y **1 Pajarita**.")
     
     c1, c2 = st.columns(2)
+    
     with c1:
         st.caption("📉 Tendencia Actual vs Optimización")
         st.dataframe(res["comparativa"], use_container_width=True, hide_index=True)
@@ -299,7 +324,6 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
         st.caption("🏆 Top 5")
         st.dataframe(res["top5"][["Ayud", "Mae", "Retro", "Días", "Utilidad_Show"]], use_container_width=True, hide_index=True)
 
-    # --- GENERACIÓN DE PDF ---
     st.divider()
     cp, _ = st.columns([1, 3])
     with cp:
@@ -308,15 +332,6 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
-
-
-
-
-
-
-
-
-
 
 
 
