@@ -49,40 +49,33 @@ if not st.session_state.user:
         <p style='color:#666;'>Inicia sesión con tu cuenta autorizada</p>
     </div>
     """, unsafe_allow_html=True)
+# ------------------------------
+# LOGIN / REGISTRO
+# ------------------------------
+tab_login, tab_signup = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
 
-    tab_login, tab_signup = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
+with tab_login:
+    email = st.text_input("Correo")
+    password = st.text_input("Contraseña", type="password")
+    if st.button("Entrar", use_container_width=True):
+        if autenticar(email, password):
+            st.session_state.user = email
+            st.rerun()
+        else:
+            st.error("Correo no autorizado o credenciales incorrectas.")
 
-    with tab_login:
-        email = st.text_input("Correo")
-        password = st.text_input("Contraseña", type="password")
-        if st.button("Entrar", use_container_width=True):
-            if autenticar(email, password):
-                st.session_state.user = email
-                st.rerun()
-            else:
-                st.error("Correo no autorizado o credenciales incorrectas.")
+with tab_signup:
+    new_email = st.text_input("Correo Nuevo")
+    new_pass = st.text_input("Contraseña Nueva", type="password")
+    if st.button("Registrarse", use_container_width=True):
+        ok, msg = registrar_usuario(new_email, new_pass)
+        if ok:
+            st.success(msg)
+        else:
+            st.warning(msg)
 
-    with tab_signup:
-        new_email = st.text_input("Correo Nuevo")
-        new_pass = st.text_input("Contraseña Nueva", type="password")
-        if st.button("Registrarse", use_container_width=True):
-            ok, msg = registrar_usuario(new_email, new_pass)
-            if ok: st.success(msg)
-            else: st.warning(msg)
+st.stop()  # 👈 Esto detiene la ejecución si el usuario NO ha iniciado sesión
 
-    st.stop()
-
-
-from utils.google_oauth import obtener_servicio_drive
-
-st.markdown("### 📂 Conecta tu Google Drive")
-
-if st.button("🔗 Conectar con Google Drive", use_container_width=True, key="connect_drive"):
-    drive_service = obtener_servicio_drive()
-    if drive_service:
-        st.success("✅ Conectado correctamente con tu Google Drive")
-    else:
-        st.error("❌ Error al conectar con Google Drive")
 
 # -------------------------------------------------------------------------------------
 # USUARIO AUTENTICADO
@@ -90,11 +83,24 @@ if st.button("🔗 Conectar con Google Drive", use_container_width=True, key="co
 user_email = st.session_state.user
 st.sidebar.success(f"👤 {user_email}")
 
+# --- 🔗 CONEXIÓN CON GOOGLE DRIVE ---
+from utils.google_oauth import obtener_servicio_drive
+
+st.markdown("### 📂 Conecta tu Google Drive")
+
+if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_width=True):
+    drive_service = obtener_servicio_drive()
+    if drive_service:
+        st.success("✅ Conectado correctamente con tu Google Drive")
+    else:
+        st.warning("🔄 Autoriza el acceso y vuelve a intentarlo.")
+
 # --- BOTÓN DE CERRAR SESIÓN ---
 st.sidebar.divider()
 if st.sidebar.button("🚪 Cerrar sesión", key="logout", use_container_width=True):
     st.session_state.user = None
     st.experimental_rerun()
+
 
 # -------------------------------------------------------------------------------------
 # CARGA Y SINCRONIZACIÓN DE PROYECTOS
@@ -327,6 +333,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
