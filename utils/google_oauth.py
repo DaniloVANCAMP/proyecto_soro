@@ -9,7 +9,8 @@ from googleapiclient.discovery import build
 # ===============================================================
 
 # 👇 CAMBIA ESTA RUTA según dónde guardaste tu archivo JSON
-CLIENT_SECRET_FILE = "utils/client_secret_1081866191988-8kd49ft1ejgrc4ukomqb1vrs6o84e0p2.apps.googleusercontent.com.json"
+CLIENT_SECRET_FILE = "utils/client_secret_2_1081866191988-8kd49ft1ejgrc4ukomqb1vrs6o84e0p2.apps.googleusercontent.com.json"
+
 
 # Permisos para acceder al Google Drive del usuario
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
