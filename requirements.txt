@@ -5,15 +5,18 @@ fpdf
 openpyxl
 matplotlib
 gspread
+requests
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
 google-api-python-client
-pyrebase4
+pyrebase5
+
 
 #python -m streamlit run app.py
 
 
 
 # OJO FALTA VERIFICACION INICIAL(verificación oficial)
+
 
