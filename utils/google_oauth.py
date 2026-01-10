@@ -19,7 +19,7 @@ def obtener_servicio_drive():
             flow = Flow.from_client_secrets_file(
                 CLIENT_SECRET_FILE,
                 scopes=SCOPES,
-                redirect_uri="https://proyectosoro-greluzdxmhpwwzsvnxzuxp.streamlit.app"  # cambia esto si estás en la nube
+                redirect_uri="proyectosoro-greluzdxmhpwwzsvnxzuxp.streamlit.app"  # cambia esto si estás en la nube
             )
 
             auth_url, _ = flow.authorization_url(prompt="consent")
