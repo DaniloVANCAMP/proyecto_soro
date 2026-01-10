@@ -1,56 +1,83 @@
 import streamlit as st
-import pyrebase
+import requests
+import urllib.parse
 
 # -------------------------------------------------------
-# Inicializa Firebase con la configuración del secrets
-# -------------------------------------------------------
-def inicializar_firebase():
-    # Carga la configuración desde secrets
-    firebase_config = dict(st.secrets["firebase"])
-    
-    # Pyrebase a veces necesita que databaseURL exista, aunque sea vacía
-    if "databaseURL" not in firebase_config:
-        firebase_config["databaseURL"] = ""
-
-    firebase = pyrebase.initialize_app(firebase_config)
-    return firebase.auth()
-
-# -------------------------------------------------------
-# Autenticación con Google (OAuth vía Firebase)
+# 1. Generar el Link de Login (Sin intermediarios)
 # -------------------------------------------------------
 def login_con_google():
-    try:
-        auth = inicializar_firebase()
-    except Exception as e:
-        st.error(f"Error inicializando Firebase: {e}")
-        return
-
-    # TU CLIENT ID REAL (El que termina en apps.googleusercontent.com)
-    # Lo ponemos directo aquí para evitar errores de lectura en secrets
-    CLIENT_ID = "1081866191988-8kd49ft1ejgrc4ukomqb1vrs6o84e0p2.apps.googleusercontent.com"
-
-    # URL de redirección (Intenta leerla de secrets, si falla usa localhost)
-    try:
-        redirect_url = st.secrets["firebase"]["authDomain"]
-    except:
-        redirect_url = "localhost:8501"
-
-    # Construimos la URL oficial de Google
-    auth_url = (
-        f"https://accounts.google.com/o/oauth2/v2/auth?"
-        f"client_id={CLIENT_ID}&"
-        f"redirect_uri=https://{redirect_url}/__/auth/handler&"
-        f"response_type=token&"
-        f"scope=email%20profile"
-    )
-
-    st.markdown(f"### 🔗 [Iniciar sesión con Google]({auth_url})")
+    # Datos de configuración
+    client_id = st.secrets["web"]["client_id"]
+    # Usamos la dirección de tu app como destino
+    redirect_uri = st.secrets["server"]["redirect_uri"]
+    
+    # Construimos la URL de Google
+    params = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
+        "access_type": "online",
+        "prompt": "select_account"
+    }
+    
+    auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+    
+    st.markdown(f"""
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="{auth_url}" target="_self" style="
+                background-color: #ffffff; 
+                color: #333; 
+                padding: 12px 25px; 
+                text-decoration: none; 
+                border-radius: 5px; 
+                border: 1px solid #ddd; 
+                font-family: sans-serif; 
+                font-weight: bold;
+                display: inline-flex;
+                align-items: center;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" 
+                     style="width: 20px; margin-right: 10px;">
+                Iniciar sesión con Google
+            </a>
+        </div>
+    """, unsafe_allow_html=True)
 
 # -------------------------------------------------------
-# Cerrar sesión
+# 2. Canjear el código por los datos del usuario
 # -------------------------------------------------------
+def intercambiar_codigo_por_usuario(code):
+    # Datos para el canje
+    token_url = "https://oauth2.googleapis.com/token"
+    payload = {
+        "client_id": st.secrets["web"]["client_id"],
+        "client_secret": st.secrets["web"]["client_secret"],
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": st.secrets["server"]["redirect_uri"]
+    }
+    
+    # A. Pedir el Token
+    res_token = requests.post(token_url, data=payload)
+    if res_token.status_code != 200:
+        st.error(f"Error obteniendo token: {res_token.text}")
+        return None
+        
+    tokens = res_token.json()
+    access_token = tokens.get("access_token")
+    
+    # B. Pedir los datos del usuario con ese Token
+    user_info_url = "https://www.googleapis.com/oauth2/v2/userinfo"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    res_user = requests.get(user_info_url, headers=headers)
+    
+    if res_user.status_code != 200:
+        st.error("Error obteniendo datos del usuario")
+        return None
+        
+    return res_user.json()  # Devuelve {email: ..., name: ..., picture: ...}
+
 def cerrar_sesion():
     st.session_state.user = None
-    if "credentials" in st.session_state:
-        del st.session_state["credentials"]
-    st.success("👋 Sesión cerrada correctamente.")
+    st.success("👋 Sesión cerrada")
