@@ -2,123 +2,106 @@ import streamlit as st
 import pandas as pd
 import os
 import json
-from utils.firebase_auth import login_con_google, intercambiar_codigo_por_usuario, cerrar_sesion
 
-# --- IMPORTS CON MANEJO DE ERRORES ---
+# Imports de tu proyecto
 try:
     from utils.calculos import procesar_datos
     from utils.pdf_generator import generar_pdf
-    # from utils.auth import autenticar, registrar_usuario (Ya no usamos el local)
-    from utils.google_oauth import obtener_servicio_drive
-    from utils.firebase_auth import login_con_google, cerrar_sesion
-    
-    # NUEVO: Importamos la base de datos
-    from utils.firestore_db import guardar_usuario_db, obtener_usuario_db
+    from utils.google_oauth import obtener_servicio_drive # Si usas esto para subir archivos
+    from utils.firebase_auth import get_login_url, get_drive_connect_url, canjear_codigo, obtener_info_usuario, cerrar_sesion
+    from utils.firestore_db import guardar_usuario_db # Si sigues usando la BD
 except ImportError as e:
-    st.error(f"⚠️ Error importando módulos: {e}")
+    st.error(f"⚠️ Error de importación: {e}")
+    st.stop()
+
+st.set_page_config(page_title="Control de Obra", layout="wide")
+
+# -------------------------------------------------------------------------------------
+# LÓGICA MAESTRA DE AUTENTICACIÓN
+# -------------------------------------------------------------------------------------
+if "user" not in st.session_state: st.session_state.user = None
+if "drive_creds" not in st.session_state: st.session_state.drive_creds = None
+
+# --- CAPTURAR EL CÓDIGO QUE DEVUELVE GOOGLE ---
+if "code" in st.query_params:
+    code = st.query_params["code"]
+    
+    # Canjeamos el código por tokens (sirve para login o para drive)
+    tokens = canjear_codigo(code)
+    
+    if tokens:
+        # CASO 1: El usuario NO estaba logueado -> Es un LOGIN
+        if not st.session_state.user:
+            info = obtener_info_usuario(tokens["access_token"])
+            if info:
+                st.session_state.user = info["email"]
+                # Opcional: Guardar en Firestore
+                # guardar_usuario_db({"email": info["email"]})
+                st.success(f"¡Hola de nuevo, {info.get('name')}!")
+        
+        # CASO 2: El usuario YA estaba logueado -> Es VINCULACIÓN DE DRIVE
+        else:
+            st.session_state.drive_creds = tokens
+            st.toast("✅ Google Drive vinculado correctamente", icon="📂")
+            
+    # Limpiamos la URL
+    st.query_params.clear()
+    st.rerun()
+
+# -------------------------------------------------------------------------------------
+# PANTALLA DE LOGIN (Si no ha entrado)
+# -------------------------------------------------------------------------------------
+if not st.session_state.user:
+    st.markdown(f"""
+    <div style='text-align:center; padding-top: 50px;'>
+        <h1>🚧 Constructora Vanoy SAS</h1>
+        <p>Sistema de Control de Obra</p>
+        <br>
+        <a href="{get_login_url()}" target="_self" style="
+            background-color: #4285F4; color: white; padding: 12px 24px; 
+            text-decoration: none; border-radius: 5px; font-weight: bold;">
+            G Iniciar Sesión con Google
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
     st.stop()
 
 # -------------------------------------------------------------------------------------
-# CONFIGURACIÓN GENERAL
+# APLICACIÓN PRINCIPAL (Usuario ya adentro)
 # -------------------------------------------------------------------------------------
-st.set_page_config(page_title="Control de Obra", layout="wide")
+usuario_actual = st.session_state.user
 
-# 🌆 Estilos CSS
-st.markdown("""
-<style>
-.block-container {padding-top: 1rem; padding-bottom: 2rem;}
-h1 {font-size: 1.5rem !important; font-weight: 700; color: #1f1f1f; margin-bottom: 0.5rem;}
-h2 {font-size: 1.2rem !important; font-weight: 600; padding-top: 1rem;}
-.stTable {font-size: 0.85rem;}
-/* Ocultar índices de tablas */
-thead tr th:first-child {display:none}
-tbody th {display:none}
-</style>
-""", unsafe_allow_html=True)
-
-# -------------------------------------------------------------------------------------
-# GESTIÓN DE SESIÓN Y LOGIN
-# -------------------------------------------------------------------------------------
-
-# Inicializa variable de sesión
-if "user" not in st.session_state: st.session_state.user = None
-
-# --- A. VERIFICAR SI VIENE DE GOOGLE (CALLBACK) ---
-# Si la URL trae un código (?code=...), significa que Google nos mandó de vuelta
-if not st.session_state.user and "code" in st.query_params:
-    code = st.query_params["code"]
+# --- SIDEBAR ---
+with st.sidebar:
+    st.write(f"👤 **{usuario_actual}**")
     
-    # Intentamos canjear ese código por el usuario
-    datos_usuario = intercambiar_codigo_por_usuario(code)
+    st.divider()
     
-    if datos_usuario:
-        st.session_state.user = datos_usuario["email"]
-        # Limpiamos la URL para que no quede el código ahí feo
-        st.query_params.clear()
-        st.rerun()
-
-# --- B. SI NO ESTÁ LOGUEADO, MOSTRAR BOTÓN ---
-if not st.session_state.user:
-    st.markdown("""
-    <div style='text-align:center; padding-top: 50px;'>
-        <h1 style='color:#004c91;'>🔐 Control de Obra</h1>
-        <p>Acceso seguro para personal autorizado</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    login_con_google()  # Muestra el botón nuevo
-    st.stop()           # Detiene la app aquí hasta que se loguee    
-# -------------------------------------------------------------------------------------
-# USUARIO AUTENTICADO
-# -------------------------------------------------------------------------------------
-user_email = st.session_state.user
-st.sidebar.success(f"👤 {user_email}")
-
-# --- GUARDAR USUARIO EN BASE DE DATOS (NUEVO) ---
-# Cada vez que entra, actualizamos su registro en Firestore
-try:
-    guardar_usuario_db({
-        "email": user_email,
-        "ultimo_acceso": pd.Timestamp.now().isoformat()
-    })
-except Exception as e:
-    # No detenemos la app si falla la DB, solo avisamos en consola
-    print(f"Error guardando en DB: {e}")
-
-# --- 🔗 CONEXIÓN CON GOOGLE DRIVE ---
-st.markdown("### 📂 Conecta tu Google Drive")
-
-AUTH_FILE = "temp_user.json"
-
-# --- Botón para conectar ---
-if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_width=True):
-    # Guardamos el estado actual en un archivo temp antes de irnos a Google
-    data = {"email": st.session_state.user, "credentials": st.session_state.get("credentials", {})}
-    with open(AUTH_FILE, "w") as f:
-        json.dump(data, f)
-
-    with st.spinner("Conectando con Google Drive..."):
-        drive_service = obtener_servicio_drive()
-
-    if drive_service:
-        st.success("✅ Conectado correctamente con tu Google Drive")
+    # --- BOTÓN PARA VINCULAR DRIVE (DENTRO DE LA APP) ---
+    if not st.session_state.drive_creds:
+        st.warning("⚠️ Drive no conectado")
+        st.markdown(f"""
+        <a href="{get_drive_connect_url()}" target="_self" style="
+            display: block; text-align: center;
+            background-color: #fff; color: #333; border: 1px solid #ccc;
+            padding: 8px; text-decoration: none; border-radius: 4px; font-size: 0.9em;">
+            🔗 Conectar Google Drive
+        </a>
+        """, unsafe_allow_html=True)
     else:
-        st.info("🔄 Autoriza el acceso en la nueva pestaña y vuelve aquí.")
+        st.success("✅ Drive Conectado")
+        if st.button("Desconectar Drive"):
+            st.session_state.drive_creds = None
+            st.rerun()
 
-# --- Recuperar servicio si ya hay credenciales ---
-if "credentials" in st.session_state and st.session_state["credentials"]:
-    try:
-        drive_service = obtener_servicio_drive()
-    except:
-        drive_service = None
+    st.divider()
+    if st.button("Cerrar Sesión"):
+        cerrar_sesion()
 
-# --- BOTÓN DE CERRAR SESIÓN ---
-st.sidebar.divider()
-if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True):
-    cerrar_sesion()
-    if os.path.exists(AUTH_FILE): os.remove(AUTH_FILE)
-    st.rerun()
-
+# --- AQUÍ VA EL RESTO DE TU LÓGICA (TABS, CÁLCULOS, ETC) ---
+st.title(f"Panel de Control")
+st.info("Bienvenido al sistema. Usa el menú lateral para gestionar tus proyectos.")
+# ... Pega aquí tus Tabs, cálculos, etc.
 # -------------------------------------------------------------------------------------
 # INTERFAZ PRINCIPAL
 # -------------------------------------------------------------------------------------
@@ -325,6 +308,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
