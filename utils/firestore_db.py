@@ -2,25 +2,31 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# Inicializar Firestore una sola vez
+# Evitar que se inicialice múltiples veces y de error
 def init_firestore():
     if not firebase_admin._apps:
-        cred = credentials.Certificate(st.secrets["firestore"])
+        # Cargar credenciales desde los Secrets de Streamlit
+        cred_dict = dict(st.secrets["firestore"])
+        
+        # Corregir los saltos de línea de la clave privada (común error de copiado)
+        cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+        
+        cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
     return firestore.client()
 
-# Guardar sesión del usuario
-def guardar_sesion(email, data):
+# Guardar o actualizar usuario
+def guardar_usuario_db(user_data):
     db = init_firestore()
-    db.collection("sesiones").document(email).set(data)
+    # Usamos el email como ID único del documento
+    doc_ref = db.collection("usuarios").document(user_data["email"])
+    doc_ref.set(user_data, merge=True)
 
-# Cargar sesión
-def cargar_sesion(email):
+# Recuperar usuario por email
+def obtener_usuario_db(email):
     db = init_firestore()
-    doc = db.collection("sesiones").document(email).get()
-    return doc.to_dict() if doc.exists else None
-
-# Eliminar sesión
-def eliminar_sesion(email):
-    db = init_firestore()
-    db.collection("sesiones").document(email).delete()
+    doc_ref = db.collection("usuarios").document(email)
+    doc = doc_ref.get()
+    if doc.exists:
+        return doc.to_dict()
+    return None
