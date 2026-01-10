@@ -14,6 +14,7 @@ def init_firestore():
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
     return firestore.client()
+    
 
 # Guardar o actualizar usuario
 def guardar_usuario_db(user_data):
