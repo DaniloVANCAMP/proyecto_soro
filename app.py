@@ -96,25 +96,31 @@ if "auth_in_progress" not in st.session_state:
 
 AUTH_FILE = "temp_auth_user.txt"
 
+# --- 🔍 Si volvemos del login de Google (tiene ?code= en la URL), restaurar usuario ---
+if "code" in st.query_params:
+    if os.path.exists(AUTH_FILE):
+        with open(AUTH_FILE, "r") as f:
+            restored_user = f.read().strip()
+        st.session_state.user = restored_user
+        os.remove(AUTH_FILE)
+        st.query_params.clear()
+        st.success("✅ Sesión restaurada después de autenticación con Google Drive.")
 
+# --- Botón de conexión ---
 if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_width=True):
-    # Guarda temporalmente el usuario antes de redirigir
+    # Guardamos el usuario actual en disco
+    with open(AUTH_FILE, "w") as f:
+        f.write(st.session_state.user)
+
     st.session_state.auth_in_progress = st.session_state.user
+
     with st.spinner("Conectando con Google Drive..."):
         drive_service = obtener_servicio_drive()
 
     if drive_service:
         st.success("✅ Conectado correctamente con tu Google Drive")
     else:
-        st.warning("🔄 Autoriza el acceso y vuelve a intentarlo.")
-
-# --- BOTÓN DE CERRAR SESIÓN ---
-st.sidebar.divider()
-if st.sidebar.button("🚪 Cerrar sesión", key="logout", use_container_width=True):
-    st.session_state.user = None
-    st.experimental_rerun()
-
-
+        st.info("🔄 Sigue el enlace de autorización que aparecerá arriba.")
 # -------------------------------------------------------------------------------------
 # CARGA Y SINCRONIZACIÓN DE PROYECTOS
 # -------------------------------------------------------------------------------------
@@ -346,6 +352,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
