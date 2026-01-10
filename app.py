@@ -4,8 +4,10 @@ import os
 from utils.calculos import procesar_datos
 from utils.pdf_generator import generar_pdf
 from utils.auth import autenticar, registrar_usuario
-from utils.firestore_db import obtener_servicio_drive
+#from utils.firestore_db import obtener_servicio_drive
 from utils.firebase_auth import guardar_usuario_db, obtener_usuario_db, cerrar_sesion
+
+from utils.google_oauth import obtener_servicio_drive
 
 
 # -------------------------------------------------------------------------------------
@@ -334,6 +336,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
