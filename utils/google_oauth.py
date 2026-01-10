@@ -1,57 +1,100 @@
 import streamlit as st
-from google_auth_oauthlib.flow import Flow
+import requests
+import urllib.parse
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 
+# -------------------------------------------------------
+# CONFIGURACIÓN BÁSICA
+# -------------------------------------------------------
+def get_config():
+    return st.secrets["web"]
+
+def get_redirect_uri():
+    # Redirección definida en Streamlit Cloud (debe estar en Google Cloud Console)
+    return st.secrets["server"]["redirect_uri"]
+
+# -------------------------------------------------------
+# A. GENERAR URL DE AUTORIZACIÓN (Drive)
+# -------------------------------------------------------
+def get_drive_auth_url():
+    params = {
+        "client_id": get_config()["client_id"],
+        "redirect_uri": get_redirect_uri(),
+        "response_type": "code",
+        "scope": "https://www.googleapis.com/auth/drive.file",
+        "access_type": "offline",
+        "prompt": "consent select_account"
+    }
+    return f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+
+# -------------------------------------------------------
+# B. CANJEAR CÓDIGO POR TOKEN
+# -------------------------------------------------------
+def exchange_code_for_token(code):
+    token_url = "https://oauth2.googleapis.com/token"
+    payload = {
+        "client_id": get_config()["client_id"],
+        "client_secret": get_config()["client_secret"],
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": get_redirect_uri()
+    }
+    response = requests.post(token_url, data=payload)
+    if response.status_code != 200:
+        st.error(f"Error canjeando código: {response.text}")
+        return None
+    return response.json()
+
+# -------------------------------------------------------
+# C. CREAR SERVICIO DE GOOGLE DRIVE
+# -------------------------------------------------------
 def obtener_servicio_drive():
+    query_params = st.query_params
+    creds = None
+
     try:
-        # 1️⃣ Configuración desde secrets.toml
-        client_config = {"web": st.secrets["web"]}
-        redirect_uri = st.secrets["web"]["redirect_uris"][0]
-
-        flow = Flow.from_client_config(
-            client_config,
-            scopes=["https://www.googleapis.com/auth/drive.file"]
-        )
-        flow.redirect_uri = redirect_uri
-
-        # 2️⃣ Verificar si Google devolvió el código en la URL
-        query_params = st.experimental_get_query_params()
+        # 1️⃣ Si ya se devolvió el código en la URL
         if "code" in query_params:
-            code = query_params["code"][0]
-            flow.fetch_token(code=code)
-            creds = flow.credentials
+            code = query_params["code"]
+            token_data = exchange_code_for_token(code)
+            if token_data:
+                creds = Credentials(
+                    token=token_data["access_token"],
+                    refresh_token=token_data.get("refresh_token"),
+                    token_uri="https://oauth2.googleapis.com/token",
+                    client_id=get_config()["client_id"],
+                    client_secret=get_config()["client_secret"],
+                    scopes=["https://www.googleapis.com/auth/drive.file"]
+                )
+                st.session_state["drive_creds"] = token_data
+                st.query_params.clear()
+                st.success("✅ Conectado correctamente con Google Drive")
 
-            # Guardamos las credenciales en la sesión
-            st.session_state["drive_credentials"] = {
-                "token": creds.token,
-                "refresh_token": creds.refresh_token,
-                "token_uri": creds.token_uri,
-                "client_id": creds.client_id,
-                "client_secret": creds.client_secret,
-                "scopes": creds.scopes,
-            }
-
-            st.success("✅ Google Drive conectado exitosamente.")
-            st.experimental_set_query_params()  # Limpia la URL
-            return build("drive", "v3", credentials=creds)
-
-        # 3️⃣ Si ya tenemos credenciales en la sesión, reconstruirlas
-        elif "drive_credentials" in st.session_state:
-            creds_data = st.session_state["drive_credentials"]
-            creds = Credentials(**creds_data)
-            return build("drive", "v3", credentials=creds)
-
-        # 4️⃣ Si no hay conexión previa, mostrar botón de autorización
-        else:
-            auth_url, _ = flow.authorization_url(
-                access_type="offline",
-                prompt="consent"
+        # 2️⃣ Si ya existen credenciales guardadas
+        elif "drive_creds" in st.session_state:
+            token_data = st.session_state["drive_creds"]
+            creds = Credentials(
+                token=token_data["access_token"],
+                refresh_token=token_data.get("refresh_token"),
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id=get_config()["client_id"],
+                client_secret=get_config()["client_secret"],
+                scopes=["https://www.googleapis.com/auth/drive.file"]
             )
-            st.markdown(f"🔗 [Haz clic aquí para autorizar Google Drive]({auth_url})")
+
+        # 3️⃣ Si no hay nada aún, mostrar el enlace de autorización
+        else:
+            auth_url = get_drive_auth_url()
+            st.markdown(f"🔗 [Autoriza acceso a Google Drive]({auth_url})")
             return None
 
+        # 4️⃣ Retornar el servicio si hay credenciales
+        if creds:
+            return build("drive", "v3", credentials=creds)
+
     except Exception as e:
-        st.error(f"⚠️ Error de autenticación: {e}")
+        st.error(f"⚠️ Error conectando con Google Drive: {e}")
         return None
+
 
