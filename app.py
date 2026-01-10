@@ -31,8 +31,6 @@ section.main > div {
 # -------------------------------------------------------------------------------------
 # LOGIN CON GOOGLE (FIREBASE AUTH)
 # -------------------------------------------------------------------------------------
-
-# Inicializa variable de sesión
 if "user" not in st.session_state:
     st.session_state.user = None
 
@@ -50,12 +48,35 @@ if not st.session_state.user:
         box-shadow: 0px 3px 10px rgba(0,0,0,0.2);
     '>
         <h1 style='font-size: 24px; color:#004c91;'>🔐 Acceso al Control de Obra</h1>
-        <p style='color:#666;'>Inicia sesión con tu cuenta de Google</p>
+        <p style='color:#666;'>Inicia sesión con tu cuenta autorizada</p>
     </div>
     """, unsafe_allow_html=True)
 
-    login_con_google()
+    # --- LOGIN / REGISTRO ---
+    tab_login, tab_signup = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
+
+    with tab_login:
+        email = st.text_input("Correo")
+        password = st.text_input("Contraseña", type="password")
+        if st.button("Entrar", use_container_width=True):
+            if login_con_correo(email, password):
+                st.success("✅ Inicio de sesión exitoso")
+                st.rerun()
+            else:
+                st.error("❌ Credenciales incorrectas o error al iniciar sesión.")
+
+    with tab_signup:
+        new_email = st.text_input("Correo Nuevo")
+        new_pass = st.text_input("Contraseña Nueva", type="password")
+        if st.button("Registrarse", use_container_width=True):
+            ok, msg = registrar_usuario(new_email, new_pass)
+            if ok:
+                st.success(msg)
+            else:
+                st.warning(msg)
+
     st.stop()
+
 
 # -------------------------------------------------------------------------------------
 # USUARIO AUTENTICADO
@@ -332,6 +353,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
