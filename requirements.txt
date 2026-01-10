@@ -10,7 +10,7 @@ google-auth
 google-auth-oauthlib
 google-auth-httplib2
 google-api-python-client
-import pyrebase5 as pyrebase
+pyrebase5 
 
 
 
@@ -19,6 +19,7 @@ import pyrebase5 as pyrebase
 
 
 # OJO FALTA VERIFICACION INICIAL(verificación oficial)
+
 
 
 
