@@ -35,7 +35,7 @@ def obtener_servicio_drive():
                 "scopes": creds.scopes,
             }
             st.success("✅ Autenticado con Google Drive correctamente.")
-            st.rerun()
+            st.query_params.clear()  # Limpia los parámetros de la URL
 
         # 3️⃣ Si ya tenemos credenciales en la sesión
         elif "credentials" in st.session_state:
