@@ -90,6 +90,13 @@ st.sidebar.success(f"👤 {user_email}")
 # --- 🔗 CONEXIÓN CON GOOGLE DRIVE ---
 st.markdown("### 📂 Conecta tu Google Drive")
 
+# Guardar usuario actual para restaurar después del redirect
+if "auth_in_progress" not in st.session_state:
+    st.session_state.auth_in_progress = None
+
+AUTH_FILE = "temp_auth_user.txt"
+
+
 if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_width=True):
     # Guarda temporalmente el usuario antes de redirigir
     st.session_state.auth_in_progress = st.session_state.user
@@ -339,6 +346,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
