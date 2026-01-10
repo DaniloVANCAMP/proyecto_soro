@@ -34,6 +34,12 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 if not st.session_state.user:
+
+    # --- ⚙️ Si estamos volviendo del login de Google (tiene ?code= en la URL), no cerrar sesión ---
+if "code" in st.query_params:
+    if "auth_in_progress" in st.session_state:
+        st.session_state.user = st.session_state.auth_in_progress
+
     # Pantalla de inicio centrada
     st.markdown("""
     <div style='
@@ -88,7 +94,10 @@ st.sidebar.success(f"👤 {user_email}")
 st.markdown("### 📂 Conecta tu Google Drive")
 
 if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_width=True):
+    # Guarda el usuario antes de redirigir
+    st.session_state.auth_in_progress = st.session_state.user
     drive_service = obtener_servicio_drive()
+
     if drive_service:
         st.success("✅ Conectado correctamente con tu Google Drive")
     else:
@@ -332,6 +341,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
