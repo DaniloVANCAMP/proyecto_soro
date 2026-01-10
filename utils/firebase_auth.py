@@ -1,5 +1,6 @@
 import streamlit as st
 import pyrebase
+
 # -------------------------------------------------------
 # Inicializa Firebase con la configuración del secrets
 # -------------------------------------------------------
@@ -8,46 +9,44 @@ def inicializar_firebase():
     firebase = pyrebase.initialize_app(firebase_config)
     return firebase.auth()
 
-
 # -------------------------------------------------------
-# Autenticación con Google (OAuth vía Firebase)
+# Iniciar sesión con correo/contraseña
 # -------------------------------------------------------
-def login_con_google():
+def login_con_correo(email, password):
     auth = inicializar_firebase()
-
-    # Firebase maneja la autenticación de Google
-    provider = "google.com"
-    
-    # Intenta obtener el dominio, si falla usa uno genérico o localhost para pruebas
     try:
-        redirect_url = st.secrets["firebase"]["authDomain"]
-    except:
-        redirect_url = "localhost:8501"
+        user = auth.sign_in_with_email_and_password(email, password)
+        guardar_usuario(user)
+        return True
+    except Exception as e:
+        st.error("❌ Error al iniciar sesión.")
+        st.write(e)
+        return False
 
-    # TU CLIENT ID REAL (El que termina en apps.googleusercontent.com)
-    # Lo tomamos de tus secretos 'web' si existen, o lo ponemos directo aquí:
-    CLIENT_ID = "1081866191988-8kd49ft1ejgrc4ukomqb1vrs6o84e0p2.apps.googleusercontent.com"
+# -------------------------------------------------------
+# Crear nuevo usuario
+# -------------------------------------------------------
+def registrar_usuario(email, password):
+    auth = inicializar_firebase()
+    try:
+        auth.create_user_with_email_and_password(email, password)
+        return True, "✅ Usuario registrado correctamente."
+    except Exception as e:
+        if "EMAIL_EXISTS" in str(e):
+            return False, "⚠️ El correo ya está registrado."
+        else:
+            st.write(e)
+            return False, "❌ Error al registrar usuario."
 
-    # URL para redirigir al login de Google
-    auth_url = (
-        f"https://accounts.google.com/o/oauth2/v2/auth?"
-        f"client_id={CLIENT_ID}&"  # <--- AQUÍ ESTABA EL ERROR
-        f"redirect_uri=https://{redirect_url}/__/auth/handler&"
-        f"response_type=token&"
-        f"scope=email%20profile"
-    )
-
-    st.markdown(f"### 🔗 [Iniciar sesión con Google]({auth_url})")
 # -------------------------------------------------------
 # Guardar usuario autenticado en sesión
 # -------------------------------------------------------
 def guardar_usuario(datos_usuario):
     st.session_state.user = {
         "email": datos_usuario.get("email"),
-        "nombre": datos_usuario.get("displayName", "Usuario"),
-        "uid": datos_usuario.get("localId"),
+        "idToken": datos_usuario.get("idToken"),
+        "refreshToken": datos_usuario.get("refreshToken"),
     }
-
 
 # -------------------------------------------------------
 # Cerrar sesión
