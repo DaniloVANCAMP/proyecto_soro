@@ -33,13 +33,12 @@ section.main > div {
 if "user" not in st.session_state:
     st.session_state.user = None
 
-if not st.session_state.user:
-
-    # --- ⚙️ Si estamos volviendo del login de Google (tiene ?code= en la URL), no cerrar sesión ---
+# --- ⚙️ Si estamos volviendo del login de Google (tiene ?code= en la URL), no cerrar sesión ---
 if "code" in st.query_params:
     if "auth_in_progress" in st.session_state:
         st.session_state.user = st.session_state.auth_in_progress
 
+if not st.session_state.user:
     # Pantalla de inicio centrada
     st.markdown("""
     <div style='
@@ -344,6 +343,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
