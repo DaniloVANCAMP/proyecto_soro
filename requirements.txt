@@ -10,10 +10,9 @@ google-auth
 google-auth-oauthlib
 google-auth-httplib2
 google-api-python-client
-pyrebase4==4.7.1
+Pyrebase4==4.7.1
 setuptools
-requests
-
+firebase-admin
 
 
 
@@ -22,6 +21,7 @@ requests
 
 
 # OJO FALTA VERIFICACION INICIAL(verificación oficial)
+
 
 
 
