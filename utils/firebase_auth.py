@@ -5,9 +5,10 @@ import pyrebase
 # Inicializa Firebase con la configuración del secrets
 # -------------------------------------------------------
 def inicializar_firebase():
-    firebase_config = dict(st.secrets["firebase"])  # 🔹 Crea copia editable
-
-    # Evita error si falta databaseURL
+    # Carga la configuración desde secrets
+    firebase_config = dict(st.secrets["firebase"])
+    
+    # Pyrebase a veces necesita que databaseURL exista, aunque sea vacía
     if "databaseURL" not in firebase_config:
         firebase_config["databaseURL"] = ""
 
@@ -15,48 +16,41 @@ def inicializar_firebase():
     return firebase.auth()
 
 # -------------------------------------------------------
-# Iniciar sesión con correo/contraseña
+# Autenticación con Google (OAuth vía Firebase)
 # -------------------------------------------------------
-def login_con_correo(email, password):
-    auth = inicializar_firebase()
+def login_con_google():
     try:
-        user = auth.sign_in_with_email_and_password(email, password)
-        guardar_usuario(user)
-        return True
+        auth = inicializar_firebase()
     except Exception as e:
-        st.error("❌ Error al iniciar sesión. Verifica tus credenciales.")
-        st.write(e)
-        return False
+        st.error(f"Error inicializando Firebase: {e}")
+        return
 
-# -------------------------------------------------------
-# Crear nuevo usuario
-# -------------------------------------------------------
-def registrar_usuario(email, password):
-    auth = inicializar_firebase()
+    # TU CLIENT ID REAL (El que termina en apps.googleusercontent.com)
+    # Lo ponemos directo aquí para evitar errores de lectura en secrets
+    CLIENT_ID = "1081866191988-8kd49ft1ejgrc4ukomqb1vrs6o84e0p2.apps.googleusercontent.com"
+
+    # URL de redirección (Intenta leerla de secrets, si falla usa localhost)
     try:
-        auth.create_user_with_email_and_password(email, password)
-        return True, "✅ Usuario registrado correctamente."
-    except Exception as e:
-        if "EMAIL_EXISTS" in str(e):
-            return False, "⚠️ El correo ya está registrado."
-        else:
-            st.write(e)
-            return False, "❌ Error al registrar usuario."
+        redirect_url = st.secrets["firebase"]["authDomain"]
+    except:
+        redirect_url = "localhost:8501"
 
-# -------------------------------------------------------
-# Guardar usuario autenticado en sesión
-# -------------------------------------------------------
-def guardar_usuario(datos_usuario):
-    st.session_state.user = {
-        "email": datos_usuario.get("email"),
-        "idToken": datos_usuario.get("idToken"),
-        "refreshToken": datos_usuario.get("refreshToken"),
-    }
+    # Construimos la URL oficial de Google
+    auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth?"
+        f"client_id={CLIENT_ID}&"
+        f"redirect_uri=https://{redirect_url}/__/auth/handler&"
+        f"response_type=token&"
+        f"scope=email%20profile"
+    )
+
+    st.markdown(f"### 🔗 [Iniciar sesión con Google]({auth_url})")
 
 # -------------------------------------------------------
 # Cerrar sesión
 # -------------------------------------------------------
 def cerrar_sesion():
     st.session_state.user = None
+    if "credentials" in st.session_state:
+        del st.session_state["credentials"]
     st.success("👋 Sesión cerrada correctamente.")
-
