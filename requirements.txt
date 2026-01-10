@@ -10,8 +10,10 @@ google-auth
 google-auth-oauthlib
 google-auth-httplib2
 google-api-python-client
-Pyrebase4==4.7.1
+pyrebase4==4.7.1
 setuptools
+requests
+
 
 
 
@@ -20,6 +22,7 @@ setuptools
 
 
 # OJO FALTA VERIFICACION INICIAL(verificación oficial)
+
 
 
 
