@@ -64,10 +64,12 @@ if "code" in st.query_params:
         email = st.text_input("Correo")
         password = st.text_input("Contraseña", type="password")
         if st.button("Entrar", use_container_width=True):
-            if autenticar(email, password):
-                st.session_state.user = email
-                st.success("✅ Inicio de sesión exitoso")
-                st.rerun()
+         if autenticar(email, password):
+           st.session_state.user = email
+           st.session_state.auth_in_progress = None  # 🧹 Limpia variable temporal
+           st.success("✅ Inicio de sesión exitoso")
+           st.rerun()
+
             else:
                 st.error("❌ Correo no autorizado o credenciales incorrectas.")
 
@@ -94,9 +96,10 @@ st.sidebar.success(f"👤 {user_email}")
 st.markdown("### 📂 Conecta tu Google Drive")
 
 if st.button("🔗 Conectar con Google Drive", key="btn_drive", use_container_width=True):
-    # Guarda el usuario antes de redirigir
+    # Guarda temporalmente el usuario antes de redirigir
     st.session_state.auth_in_progress = st.session_state.user
-    drive_service = obtener_servicio_drive()
+    with st.spinner("Conectando con Google Drive..."):
+        drive_service = obtener_servicio_drive()
 
     if drive_service:
         st.success("✅ Conectado correctamente con tu Google Drive")
@@ -341,6 +344,7 @@ if st.session_state.proyecto_items[item_id]["bitacora"] is not None:
             p = generar_pdf(res, item_id, cfg)
             with open(p, "rb") as f: 
                 st.download_button("Descargar", f, f"Reporte_{item_id}.pdf", "application/pdf")
+
 
 
 
