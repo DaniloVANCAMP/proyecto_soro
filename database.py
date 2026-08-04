@@ -19,12 +19,13 @@ def init_db():
                     password TEXT
                 )''')
     
-    # 2. Tabla de Perfiles
+    # 2. Tabla de Perfiles (ACTUALIZADA con limitaciones y equipo)
     c.execute('''CREATE TABLE IF NOT EXISTS perfiles (
                     user_id INTEGER PRIMARY KEY,
                     nombre TEXT, edad INTEGER, genero TEXT, nivel TEXT,
                     estatura REAL, peso REAL, pecho REAL, cintura REAL,
                     piernas REAL, brazos REAL, cadera REAL, pantorrillas REAL,
+                    limitaciones TEXT, equipo TEXT,
                     FOREIGN KEY(user_id) REFERENCES usuarios(id)
                 )''')
     conn.commit()
@@ -63,25 +64,32 @@ def guardar_perfil(user_id, datos):
     
     medidas = datos.get('medidas', {})
     
+    # Convertimos las listas a texto separado por comas para poder guardarlo en SQLite
+    limitaciones_str = ",".join(datos.get('limitaciones', []))
+    equipo_str = ",".join(datos.get('equipo', []))
+    
     if existe:
         c.execute('''UPDATE perfiles SET 
                      nombre=?, edad=?, genero=?, nivel=?, estatura=?, peso=?,
-                     pecho=?, cintura=?, piernas=?, brazos=?, cadera=?, pantorrillas=?
+                     pecho=?, cintura=?, piernas=?, brazos=?, cadera=?, pantorrillas=?,
+                     limitaciones=?, equipo=?
                      WHERE user_id=?''',
                   (datos.get('nombre'), datos.get('edad'), datos.get('genero'), datos.get('nivel'),
                    datos.get('estatura'), datos.get('peso'),
                    medidas.get('pecho', 0), medidas.get('cintura', 0), medidas.get('pierna', 0), 
                    medidas.get('brazo', 0), medidas.get('cadera', 0), medidas.get('pantorrilla', 0),
-                   user_id))
+                   limitaciones_str, equipo_str, user_id))
     else:
         c.execute('''INSERT INTO perfiles 
                      (user_id, nombre, edad, genero, nivel, estatura, peso, 
-                      pecho, cintura, piernas, brazos, cadera, pantorrillas)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                      pecho, cintura, piernas, brazos, cadera, pantorrillas,
+                      limitaciones, equipo)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                   (user_id, datos.get('nombre'), datos.get('edad'), datos.get('genero'), datos.get('nivel'),
                    datos.get('estatura'), datos.get('peso'),
                    medidas.get('pecho', 0), medidas.get('cintura', 0), medidas.get('pierna', 0), 
-                   medidas.get('brazo', 0), medidas.get('cadera', 0), medidas.get('pantorrilla', 0)))
+                   medidas.get('brazo', 0), medidas.get('cadera', 0), medidas.get('pantorrilla', 0),
+                   limitaciones_str, equipo_str))
     
     conn.commit()
     conn.close()
@@ -103,6 +111,9 @@ def obtener_perfil(user_id):
             "nivel": fila["nivel"],
             "estatura": fila["estatura"],
             "peso": fila["peso"],
+            # Volvemos a convertir el texto separado por comas en listas
+            "limitaciones": fila["limitaciones"].split(",") if fila["limitaciones"] else [],
+            "equipo": fila["equipo"].split(",") if fila["equipo"] else [],
             "medidas": {
                 "pecho": fila["pecho"],
                 "cintura": fila["cintura"],

@@ -1,7 +1,7 @@
 import os
 import sys
 import streamlit as st
-import database as db  # <-- 1. Importamos tu base de datos
+import database as db  # <-- Importamos tu base de datos
 
 def cargar_perfil_db():
     """Carga los datos biométricos directamente de la base de datos del usuario logueado."""
@@ -15,7 +15,7 @@ def cargar_perfil_db():
 def mostrar(exercises=None):
     st.title("👤 Mi Perfil y Entorno Biométrico")
     
-    # <-- 2. Llamamos a la nueva función que lee de la base de datos
+    # Llamamos a la función que lee de la base de datos
     perfil = cargar_perfil_db() 
     
     if not perfil:
@@ -53,6 +53,19 @@ def mostrar(exercises=None):
             st.metric("Ubicación Actual", "Cali, Colombia")
             st.metric("Clima Local", "28 °C | Humedad 65%")
             st.caption("Ajuste automático: Incremento de descansos +20s por fatiga térmica.")
+
+        # --- CONTENEDOR PARA LIMITACIONES MÉDICAS ---
+        with st.container(border=True):
+            st.subheader("🏥 Salud y Prevención")
+            
+            # Mostramos Limitaciones / Lesiones sin mencionar IA
+            limitaciones = perfil.get('limitaciones', [])
+            if limitaciones:
+                st.write("**Condiciones registradas:**")
+                for lim in limitaciones:
+                    st.markdown(f"- 🔴 {lim}")
+            else:
+                st.write("**Condiciones registradas:** Ninguna reportada ✅")
 
     st.divider()
     

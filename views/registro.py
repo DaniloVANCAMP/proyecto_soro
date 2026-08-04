@@ -50,6 +50,17 @@ def mostrar():
             piernas = st.number_input("Piernas (Cuádriceps):", min_value=0.0, value=float(medidas.get('pierna', 0.0)))
             pantorrillas = st.number_input("Pantorrillas:", min_value=0.0, value=float(medidas.get('pantorrilla', 0.0)))
 
+    # Contenedor 3: Salud y Prevención (Limpiado y Profesional)
+    with st.container(border=True):
+        st.markdown("### 🏥 Salud y Prevención de Lesiones")
+        st.write("Selecciona si tienes alguna condición actual para que el sistema adapte tus rutinas automáticamente y evite ejercicios de riesgo.")
+        
+        opciones_lesiones = ["Dolor Lumbar", "Lesión de Rodilla", "Lesión de Hombro", "Muñecas Sensibles"]
+        lesiones_actuales = perfil_actual.get('limitaciones', [])
+        lesiones_default = [l for l in lesiones_actuales if l in opciones_lesiones]
+        
+        limitaciones = st.multiselect("Condiciones médicas o lesiones activas:", opciones_lesiones, default=lesiones_default)
+
     st.divider()
     
     # Botón de guardado
@@ -61,6 +72,7 @@ def mostrar():
             "nivel": nivel,
             "estatura": estatura,
             "peso": peso,
+            "limitaciones": limitaciones, # <-- Solo guardamos las lesiones, nada de equipo
             "medidas": {
                 "pecho": pecho,
                 "cintura": cintura,
