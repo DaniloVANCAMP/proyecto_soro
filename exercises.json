@@ -1,0 +1,38 @@
+[
+    {
+        "name": "Press de banca plano",
+        "category": "Pecho",
+        "equipment": "Barra",
+        "target": "Pectorales",
+        "gif_url": "",
+        "instructions": [
+            "Acuéstate en el banco",
+            "Baja la barra al pecho",
+            "Empuja fuerte hacia arriba"
+        ]
+    },
+    {
+        "name": "Sentadilla libre",
+        "category": "Piernas",
+        "equipment": "Barra",
+        "target": "Cuádriceps",
+        "gif_url": "",
+        "instructions": [
+            "Coloca la barra en los trapecios",
+            "Baja con la espalda recta",
+            "Sube empujando con los talones"
+        ]
+    },
+    {
+        "name": "Dominadas",
+        "category": "Espalda",
+        "equipment": "Peso corporal",
+        "target": "Dorsales",
+        "gif_url": "",
+        "instructions": [
+            "Cuélgate de la barra",
+            "Tira de tu cuerpo hacia arriba",
+            "Pasa la barbilla por encima de la barra"
+        ]
+    }
+]

@@ -1,0 +1,16 @@
+{
+    "nombre": "Danilo Vanoy",
+    "edad": 29,
+    "genero": "Masculino",
+    "peso": 85.0,
+    "estatura": 177,
+    "nivel": "Intermedio",
+    "medidas": {
+        "pecho": 107.5,
+        "brazo": 33.0,
+        "cintura": 95.0,
+        "cadera": 105.0,
+        "pierna": 55.0,
+        "pantorrilla": 20.0
+    }
+}

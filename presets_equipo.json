@@ -1,0 +1,42 @@
+{
+    "\ud83c\udfe0 Casa": [
+        "Barbell (Barra)",
+        "Cable (Polea)",
+        "Skierg (M\u00e1quina Skierg)",
+        "Wheel roller (Rueda Abdominal)"
+    ],
+    "\ud83c\udfcb\ufe0f Gym Frecuente": [
+        "Bosu ball (Bal\u00f3n Bosu)",
+        "Assisted (Asistido)",
+        "Band (Banda El\u00e1stica)",
+        "Barbell (Barra)",
+        "Body Weight (Peso Corporal)",
+        "Cable (Polea)",
+        "Dumbbell (Mancuerna)",
+        "EZ Barbell (Barra EZ)",
+        "Elliptical (El\u00edptica)",
+        "Ergometer (Erg\u00f3metro)",
+        "Hammer (Martillo)",
+        "Kettlebell (Pesa Rusa)",
+        "Leverage machine (M\u00e1quina de Palanca)",
+        "Medicine ball (Bal\u00f3n Medicinal)",
+        "Olympic barbell (Barra Ol\u00edmpica)",
+        "Resistance band (Banda de Resistencia)",
+        "Roller (Rodillo)",
+        "Rope (Cuerda)",
+        "Skierg (M\u00e1quina Skierg)",
+        "Sled (Trineo)",
+        "Smith machine (M\u00e1quina Smith)",
+        "Stability ball (Bal\u00f3n Suizo)",
+        "Stationary bike (Bicicleta Est\u00e1tica)",
+        "Stepmill (Escaladora)",
+        "Tire (Llanta / Neum\u00e1tico)",
+        "Trap bar (Barra Hexagonal)",
+        "Weighted (Con Peso)",
+        "Wheel roller (Rueda Abdominal)"
+    ],
+    "Gym conjunto": [
+        "Cable (Polea)",
+        "Body Weight (Peso Corporal)"
+    ]
+}

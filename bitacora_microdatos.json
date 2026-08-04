@@ -1,0 +1,981 @@
+[
+    {
+        "fecha_hora": "2026-08-03T17:05:00.623408",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Cable Seated One Arm Concentration Curl",
+        "peso_kg": 5.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:05:00.623408",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Cross Body Crunch",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:05:00.623408",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Cable Squat Row (With Rope Attachment)",
+        "peso_kg": 5.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:05:00.623408",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Seated Calf Stretch (Male)",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:05:00.623408",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Scapula Dips",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:05:00.623408",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Frog Crunch",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:05:04.252254",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Cable Seated One Arm Concentration Curl",
+        "peso_kg": 5.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:05:04.252254",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Cross Body Crunch",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:05:04.252254",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Cable Squat Row (With Rope Attachment)",
+        "peso_kg": 5.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:05:04.252254",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Seated Calf Stretch (Male)",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:05:04.252254",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Scapula Dips",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:05:04.252254",
+        "usuario_id": "Gym conjunto",
+        "ejercicio": "Frog Crunch",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:08:37.547219",
+        "usuario_id": "\ud83c\udfe0 Casa",
+        "ejercicio": "High Knee Against Wall",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:08:37.547219",
+        "usuario_id": "\ud83c\udfe0 Casa",
+        "ejercicio": "Cable Wide Grip Rear Pulldown Behind Neck",
+        "peso_kg": 5.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:08:37.547219",
+        "usuario_id": "\ud83c\udfe0 Casa",
+        "ejercicio": "Rocky Pull-Up Pulldown",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:08:37.547219",
+        "usuario_id": "\ud83c\udfe0 Casa",
+        "ejercicio": "Barbell Reverse Grip Bent Over Row",
+        "peso_kg": 5.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:25:21.661929",
+        "usuario_id": "Usuario_App",
+        "lugar": "\ud83c\udfe0 Casa",
+        "clima": "Soleado \u2600\ufe0f",
+        "temperatura": 25,
+        "esfuerzo_rpe": 8,
+        "ejercicio": "Quads",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:25:21.661929",
+        "usuario_id": "Usuario_App",
+        "lugar": "\ud83c\udfe0 Casa",
+        "clima": "Soleado \u2600\ufe0f",
+        "temperatura": 25,
+        "esfuerzo_rpe": 8,
+        "ejercicio": "Cable Assisted Inverse Leg Curl",
+        "peso_kg": 5.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:25:21.661929",
+        "usuario_id": "Usuario_App",
+        "lugar": "\ud83c\udfe0 Casa",
+        "clima": "Soleado \u2600\ufe0f",
+        "temperatura": 25,
+        "esfuerzo_rpe": 8,
+        "ejercicio": "Kneeling Jump Squat",
+        "peso_kg": 5.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:25:21.661929",
+        "usuario_id": "Usuario_App",
+        "lugar": "\ud83c\udfe0 Casa",
+        "clima": "Soleado \u2600\ufe0f",
+        "temperatura": 25,
+        "esfuerzo_rpe": 8,
+        "ejercicio": "Curtsey Squat",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:25:21.661929",
+        "usuario_id": "Usuario_App",
+        "lugar": "\ud83c\udfe0 Casa",
+        "clima": "Soleado \u2600\ufe0f",
+        "temperatura": 25,
+        "esfuerzo_rpe": 8,
+        "ejercicio": "Self Assisted Inverse Leg Curl",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "fecha_hora": "2026-08-03T17:25:21.661929",
+        "usuario_id": "Usuario_App",
+        "lugar": "\ud83c\udfe0 Casa",
+        "clima": "Soleado \u2600\ufe0f",
+        "temperatura": 25,
+        "esfuerzo_rpe": 8,
+        "ejercicio": "Forward Lunge (Male)",
+        "peso_kg": 0.0,
+        "completado": true
+    },
+    {
+        "id_evento": "aede3547-8d6e-4152-b505-e62dc15eac29",
+        "timestamp": "2026-08-03T17:35:38.700134",
+        "usuario": {
+            "id": "Usuario_App",
+            "perfil_lugar": "\ud83c\udfe0 Casa"
+        },
+        "contexto_ambiental": {
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7
+        },
+        "ejercicio": {
+            "nombre": "Barbell Seated Twist",
+            "musculo_objetivo": "Abs (Abdominales)",
+            "zona_cuerpo": "Waist (Cintura / Abdomen)",
+            "equipo_usado": "Barbell (Barra)"
+        },
+        "ejecucion": {
+            "peso_kg": 5.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "53bf5fa8-d37a-440a-a116-08d000489221",
+        "timestamp": "2026-08-03T17:35:38.700134",
+        "usuario": {
+            "id": "Usuario_App",
+            "perfil_lugar": "\ud83c\udfe0 Casa"
+        },
+        "contexto_ambiental": {
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7
+        },
+        "ejercicio": {
+            "nombre": "Quick Feet V. 2",
+            "musculo_objetivo": "Quads (Cu\u00e1driceps)",
+            "zona_cuerpo": "Upper Legs (Piernas)",
+            "equipo_usado": "Body Weight (Peso Corporal)"
+        },
+        "ejecucion": {
+            "peso_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "e4714a39-afae-4ca5-89dd-14d63ac79f00",
+        "timestamp": "2026-08-03T17:35:38.700134",
+        "usuario": {
+            "id": "Usuario_App",
+            "perfil_lugar": "\ud83c\udfe0 Casa"
+        },
+        "contexto_ambiental": {
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7
+        },
+        "ejercicio": {
+            "nombre": "Glute-Ham Raise",
+            "musculo_objetivo": "Hamstrings (Isquiotibiales)",
+            "zona_cuerpo": "Upper Legs (Piernas)",
+            "equipo_usado": "Body Weight (Peso Corporal)"
+        },
+        "ejecucion": {
+            "peso_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "df743535-f196-40f9-86d4-ea63d68705e5",
+        "timestamp": "2026-08-03T17:55:47.495562",
+        "usuario": {
+            "id": "Usuario_App",
+            "perfil_lugar": "\ud83c\udfe0 Casa"
+        },
+        "contexto_ambiental": {
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 5
+        },
+        "ejercicio": {
+            "nombre": "Cable Lying Extension Pullover (With Rope Attachment)",
+            "musculo_objetivo": "Lats (Dorsales)",
+            "zona_cuerpo": "Back (Espalda)",
+            "equipo_usado": "Cable (Polea)"
+        },
+        "ejecucion": {
+            "peso_kg": 5.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "56edc580-689e-4a48-baaa-109405797bcf",
+        "timestamp": "2026-08-03T17:55:47.495562",
+        "usuario": {
+            "id": "Usuario_App",
+            "perfil_lugar": "\ud83c\udfe0 Casa"
+        },
+        "contexto_ambiental": {
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 5
+        },
+        "ejercicio": {
+            "nombre": "Barbell Standing Close Grip Curl",
+            "musculo_objetivo": "Biceps (B\u00edceps)",
+            "zona_cuerpo": "Upper Arms (Brazos)",
+            "equipo_usado": "Barbell (Barra)"
+        },
+        "ejecucion": {
+            "peso_kg": 5.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "7cfdf559-cbea-4888-97c9-a97b46856608",
+        "timestamp": "2026-08-03T17:55:47.495562",
+        "usuario": {
+            "id": "Usuario_App",
+            "perfil_lugar": "\ud83c\udfe0 Casa"
+        },
+        "contexto_ambiental": {
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 5
+        },
+        "ejercicio": {
+            "nombre": "Standing Pelvic Tilt",
+            "musculo_objetivo": "Spine (Columna)",
+            "zona_cuerpo": "Back (Espalda)",
+            "equipo_usado": "Body Weight (Peso Corporal)"
+        },
+        "ejecucion": {
+            "peso_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "5b4b21ed-36e7-4275-b2b2-58f8aba3cc8a",
+        "timestamp": "2026-08-03T17:55:47.495562",
+        "usuario": {
+            "id": "Usuario_App",
+            "perfil_lugar": "\ud83c\udfe0 Casa"
+        },
+        "contexto_ambiental": {
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 5
+        },
+        "ejercicio": {
+            "nombre": "Arm Slingers Hanging Bent Knee Legs",
+            "musculo_objetivo": "Abs (Abdominales)",
+            "zona_cuerpo": "Waist (Cintura / Abdomen)",
+            "equipo_usado": "Body Weight (Peso Corporal)"
+        },
+        "ejecucion": {
+            "peso_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "10036ba3-87fb-4fbc-a9b9-21e4caf97621",
+        "timestamp": "2026-08-03T17:55:47.495562",
+        "usuario": {
+            "id": "Usuario_App",
+            "perfil_lugar": "\ud83c\udfe0 Casa"
+        },
+        "contexto_ambiental": {
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 5
+        },
+        "ejercicio": {
+            "nombre": "Close-Grip Push-Up (On Knees)",
+            "musculo_objetivo": "Triceps (Tr\u00edceps)",
+            "zona_cuerpo": "Upper Arms (Brazos)",
+            "equipo_usado": "Body Weight (Peso Corporal)"
+        },
+        "ejecucion": {
+            "peso_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "9452865d-f65b-4829-afb8-ab482cf16fe2",
+        "timestamp": "2026-08-03T17:55:47.495562",
+        "usuario": {
+            "id": "Usuario_App",
+            "perfil_lugar": "\ud83c\udfe0 Casa"
+        },
+        "contexto_ambiental": {
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 5
+        },
+        "ejercicio": {
+            "nombre": "Barbell Bench Squat",
+            "musculo_objetivo": "Quads (Cu\u00e1driceps)",
+            "zona_cuerpo": "Upper Legs (Piernas)",
+            "equipo_usado": "Barbell (Barra)"
+        },
+        "ejecucion": {
+            "peso_kg": 5.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "add8278b-6e14-4c20-b8b4-709f82785dc7",
+        "timestamp": "2026-08-03T18:11:56.572336",
+        "usuario": {
+            "nombre": "Usuario ML",
+            "sexo": "Masculino",
+            "edad": 30,
+            "estatura_cm": 175.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 70.0,
+            "medidas_cm": {
+                "biceps": 35.0,
+                "abdomen": 85.0,
+                "cintura": 80.0,
+                "cadera": 95.0,
+                "gluteos": 100.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 38.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfcb\ufe0f Gym Frecuente",
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "1386",
+            "nombre": "One Leg Donkey Calf Raise",
+            "musculo_objetivo": "Calves",
+            "zona_cuerpo": "Lower Legs (Pantorrillas)",
+            "equipo_usado": "Body Weight (Peso Corporal)"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "285a72b8-65c5-4e7d-b737-6d58738e818e",
+        "timestamp": "2026-08-03T18:11:56.572336",
+        "usuario": {
+            "nombre": "Usuario ML",
+            "sexo": "Masculino",
+            "edad": 30,
+            "estatura_cm": 175.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 70.0,
+            "medidas_cm": {
+                "biceps": 35.0,
+                "abdomen": 85.0,
+                "cintura": 80.0,
+                "cadera": 95.0,
+                "gluteos": 100.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 38.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfcb\ufe0f Gym Frecuente",
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "0684",
+            "nombre": "Run (Equipment)",
+            "musculo_objetivo": "Cardio",
+            "zona_cuerpo": "Cardio",
+            "equipo_usado": "Body Weight (Peso Corporal)"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "d50892d6-a307-46cf-a8c7-68a4d8175bad",
+        "timestamp": "2026-08-03T18:11:56.572336",
+        "usuario": {
+            "nombre": "Usuario ML",
+            "sexo": "Masculino",
+            "edad": 30,
+            "estatura_cm": 175.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 70.0,
+            "medidas_cm": {
+                "biceps": 35.0,
+                "abdomen": 85.0,
+                "cintura": 80.0,
+                "cadera": 95.0,
+                "gluteos": 100.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 38.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfcb\ufe0f Gym Frecuente",
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "3638",
+            "nombre": "Push To Run",
+            "musculo_objetivo": "Cardio",
+            "zona_cuerpo": "Cardio",
+            "equipo_usado": "Body Weight (Peso Corporal)"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "6b7feef0-bf45-4cc4-8532-b14b08512d30",
+        "timestamp": "2026-08-03T18:11:56.572336",
+        "usuario": {
+            "nombre": "Usuario ML",
+            "sexo": "Masculino",
+            "edad": 30,
+            "estatura_cm": 175.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 70.0,
+            "medidas_cm": {
+                "biceps": 35.0,
+                "abdomen": 85.0,
+                "cintura": 80.0,
+                "cadera": 95.0,
+                "gluteos": 100.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 38.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfcb\ufe0f Gym Frecuente",
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "3318",
+            "nombre": "Swing 360",
+            "musculo_objetivo": "Cardio",
+            "zona_cuerpo": "Cardio",
+            "equipo_usado": "Body Weight (Peso Corporal)"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "f10f8aa5-4cf3-4d91-ae8c-540668e4fa46",
+        "timestamp": "2026-08-03T18:11:56.572336",
+        "usuario": {
+            "nombre": "Usuario ML",
+            "sexo": "Masculino",
+            "edad": 30,
+            "estatura_cm": 175.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 70.0,
+            "medidas_cm": {
+                "biceps": 35.0,
+                "abdomen": 85.0,
+                "cintura": 80.0,
+                "cadera": 95.0,
+                "gluteos": 100.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 38.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfcb\ufe0f Gym Frecuente",
+            "ciudad": "Cali",
+            "clima": "Partly cloudy",
+            "temperatura_c": 29
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "3223",
+            "nombre": "Star Jump (Male)",
+            "musculo_objetivo": "Cardio",
+            "zona_cuerpo": "Cardio",
+            "equipo_usado": "Body Weight (Peso Corporal)"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "e8a12b30-86bb-4305-b4a8-7ce12006e740",
+        "timestamp": "2026-08-03T21:47:03.612715",
+        "user_id": 1,
+        "usuario": {
+            "nombre": "Amanda Campos",
+            "sexo": "Femenino",
+            "edad": 53,
+            "estatura_cm": 158.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 87.0,
+            "medidas_cm": {
+                "biceps": 30.0,
+                "abdomen": 90.0,
+                "cintura": 90.0,
+                "cadera": 110.0,
+                "gluteos": 110.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 32.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfe0 Casa",
+            "ciudad": "Cali",
+            "clima": "Patchy rain nearby",
+            "temperatura_c": 28
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "1473",
+            "nombre": "Backward Jump",
+            "musculo_objetivo": "Cu\u00e1driceps",
+            "zona_cuerpo": "Piernas / Gl\u00fateos",
+            "equipo_usado": "Peso corporal (Calistenia)"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "1285c6d7-743e-4186-83be-b0a7a64ced1a",
+        "timestamp": "2026-08-03T21:47:03.612715",
+        "user_id": 1,
+        "usuario": {
+            "nombre": "Amanda Campos",
+            "sexo": "Femenino",
+            "edad": 53,
+            "estatura_cm": 158.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 87.0,
+            "medidas_cm": {
+                "biceps": 30.0,
+                "abdomen": 90.0,
+                "cintura": 90.0,
+                "cadera": 110.0,
+                "gluteos": 110.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 32.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfe0 Casa",
+            "ciudad": "Cali",
+            "clima": "Patchy rain nearby",
+            "temperatura_c": 28
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "1751",
+            "nombre": "Barbell Pin Presses",
+            "musculo_objetivo": "Tr\u00edceps",
+            "zona_cuerpo": "Brazos",
+            "equipo_usado": "Barra recta"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "cf3e4ad4-0593-4f32-b2a0-c6c8731a0df2",
+        "timestamp": "2026-08-03T21:47:03.612715",
+        "user_id": 1,
+        "usuario": {
+            "nombre": "Amanda Campos",
+            "sexo": "Femenino",
+            "edad": 53,
+            "estatura_cm": 158.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 87.0,
+            "medidas_cm": {
+                "biceps": 30.0,
+                "abdomen": 90.0,
+                "cintura": 90.0,
+                "cadera": 110.0,
+                "gluteos": 110.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 32.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfe0 Casa",
+            "ciudad": "Cali",
+            "clima": "Patchy rain nearby",
+            "temperatura_c": 28
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "0765",
+            "nombre": "Smith Seated Shoulder Press",
+            "musculo_objetivo": "Deltoides / Hombros",
+            "zona_cuerpo": "Hombros",
+            "equipo_usado": "M\u00e1quina Smith / Multipower"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "44d93f18-8d96-4c25-8017-4c5a19b7f0e1",
+        "timestamp": "2026-08-03T21:47:03.612715",
+        "user_id": 1,
+        "usuario": {
+            "nombre": "Amanda Campos",
+            "sexo": "Femenino",
+            "edad": 53,
+            "estatura_cm": 158.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 87.0,
+            "medidas_cm": {
+                "biceps": 30.0,
+                "abdomen": 90.0,
+                "cintura": 90.0,
+                "cadera": 110.0,
+                "gluteos": 110.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 32.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfe0 Casa",
+            "ciudad": "Cali",
+            "clima": "Patchy rain nearby",
+            "temperatura_c": 28
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "1346",
+            "nombre": "Kneeling Lat Stretch",
+            "musculo_objetivo": "Dorsales",
+            "zona_cuerpo": "Espalda",
+            "equipo_usado": "Peso corporal (Calistenia)"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "9655250e-fc60-4ff5-88ff-8461be4057f8",
+        "timestamp": "2026-08-03T21:47:03.612715",
+        "user_id": 1,
+        "usuario": {
+            "nombre": "Amanda Campos",
+            "sexo": "Femenino",
+            "edad": 53,
+            "estatura_cm": 158.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 87.0,
+            "medidas_cm": {
+                "biceps": 30.0,
+                "abdomen": 90.0,
+                "cintura": 90.0,
+                "cadera": 110.0,
+                "gluteos": 110.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 32.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfe0 Casa",
+            "ciudad": "Cali",
+            "clima": "Patchy rain nearby",
+            "temperatura_c": 28
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "1625",
+            "nombre": "Smith Machine Decline Close Grip Bench Press",
+            "musculo_objetivo": "Tr\u00edceps",
+            "zona_cuerpo": "Brazos",
+            "equipo_usado": "M\u00e1quina Smith / Multipower"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "21af1b9c-b9a5-4299-a582-3ff86ae7ad20",
+        "timestamp": "2026-08-03T21:47:03.612715",
+        "user_id": 1,
+        "usuario": {
+            "nombre": "Amanda Campos",
+            "sexo": "Femenino",
+            "edad": 53,
+            "estatura_cm": 158.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 87.0,
+            "medidas_cm": {
+                "biceps": 30.0,
+                "abdomen": 90.0,
+                "cintura": 90.0,
+                "cadera": 110.0,
+                "gluteos": 110.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 32.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfe0 Casa",
+            "ciudad": "Cali",
+            "clima": "Patchy rain nearby",
+            "temperatura_c": 28
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "1413",
+            "nombre": "Cable Reverse One Arm Curl",
+            "musculo_objetivo": "B\u00edceps",
+            "zona_cuerpo": "Brazos",
+            "equipo_usado": "Polea / Cable"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "377b4df6-9b54-4928-becb-3e8f5582ec14",
+        "timestamp": "2026-08-03T22:24:52.632375",
+        "user_id": 1,
+        "usuario": {
+            "nombre": "Amanda Campos",
+            "sexo": "Femenino",
+            "edad": 53,
+            "estatura_cm": 158.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 87.0,
+            "medidas_cm": {
+                "biceps": 30.0,
+                "abdomen": 90.0,
+                "cintura": 90.0,
+                "cadera": 110.0,
+                "gluteos": 110.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 32.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfe0 Casa",
+            "ciudad": "Santa Marta",
+            "clima": "Parcialmente Nublado",
+            "temperatura_c": 34
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "3222",
+            "nombre": "Salto En Semi Sentadilla (Masculino)",
+            "musculo_objetivo": "Sistema Cardiovascular",
+            "zona_cuerpo": "Cardio / Resistencia",
+            "equipo_usado": "Peso corporal (Calistenia)"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "58bf338f-d90c-4cb4-983a-ac2cedcf98ab",
+        "timestamp": "2026-08-03T22:24:52.632375",
+        "user_id": 1,
+        "usuario": {
+            "nombre": "Amanda Campos",
+            "sexo": "Femenino",
+            "edad": 53,
+            "estatura_cm": 158.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 87.0,
+            "medidas_cm": {
+                "biceps": 30.0,
+                "abdomen": 90.0,
+                "cintura": 90.0,
+                "cadera": 110.0,
+                "gluteos": 110.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 32.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfe0 Casa",
+            "ciudad": "Santa Marta",
+            "clima": "Parcialmente Nublado",
+            "temperatura_c": 34
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "2805",
+            "nombre": "Peso Muerto Con Una Sola Pierna Con Mancuernas Y Soporte Stepbox",
+            "musculo_objetivo": "Gl\u00fateos",
+            "zona_cuerpo": "Piernas / Gl\u00fateos",
+            "equipo_usado": "Mancuerna"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    }
+]
