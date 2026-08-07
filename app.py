@@ -2,7 +2,7 @@ import json
 import os
 import sys
 import streamlit as st
-import database as db  # <-- IMPORTAMOS LA BASE DE DATOS AQUÍ
+import database as db
 
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 if ROOT_DIR not in sys.path:
@@ -13,31 +13,24 @@ from views import (
     registro,
     tab_1_perfil,
     tab_2_catalogo,
-    tab_3_generador,
     tab_4_bitacora,
     tab_5_nutricion
 )
 
-st.set_page_config(
-    page_title="Fitness & Nutrición App", page_icon="🏋️‍♂️", layout="wide"
-)
-
+st.set_page_config(page_title="Fitness & Nutrición App", page_icon="🏋️‍♂️", layout="wide")
 BASE_MEDIA_URL = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/"
 
 @st.cache_data
 def load_exercises():
     ruta_raiz = os.path.join(ROOT_DIR, "exercises.json")
     if not os.path.exists(ruta_raiz):
-        datos_base = [
-            {"name": "Press de banca plano", "category": "Pecho", "equipment": "Barra", "target": "Pectorales", "gif_url": "", "instructions": []},
-        ]
+        datos_base = [{"name": "Press de banca plano", "category": "Pecho", "equipment": "Barra", "target": "Pectorales", "gif_url": "", "instructions": []}]
         with open(ruta_raiz, "w", encoding="utf-8") as f:
             json.dump(datos_base, f, ensure_ascii=False, indent=4)
     with open(ruta_raiz, "r", encoding="utf-8") as f:
         return json.load(f)
 
 def check_perfil():
-    """Busca el perfil EN LA BASE DE DATOS usando el ID del usuario"""
     user_id = st.session_state.get("user_id")
     if user_id:
         return db.obtener_perfil(user_id)
@@ -57,9 +50,6 @@ def main():
         st.error(f"Error crítico irrecuperable: {e}")
         st.stop()
 
-    if "historial_bitacora" not in st.session_state:
-        st.session_state["historial_bitacora"] = []
-
     perfil = check_perfil()
 
     if perfil is None:
@@ -69,20 +59,17 @@ def main():
         usuario_actual = st.session_state.get("username", "Usuario")
         
         st.sidebar.title(f"🏋️ Smart Fitness de {usuario_actual}")
-        st.sidebar.caption("Plataforma Integral de Entrenamiento & IA")
+        st.sidebar.caption("Plataforma Integral de Entrenamiento")
 
         menu = st.sidebar.radio(
             "Menú Principal",
-            ["👤 Mi Perfil y Entorno", "🏋️ Rutinas y Catálogo", "🍏 Nutrición y Suplementación", "📝 Bitácora Diaria", "⚙️ Editar Perfil"],
+            ["👤 Mi Perfil y Entorno", "🏋️ Centro de Entrenamiento", "🍏 Nutrición y Suplementación", "📝 Bitácora Diaria", "⚙️ Editar Perfil"],
         )
 
         if menu == "👤 Mi Perfil y Entorno":
             tab_1_perfil.mostrar(exercises)
-        elif menu == "🏋️ Rutinas y Catálogo":
-            try:
-                tab_2_catalogo.mostrar(exercises, BASE_MEDIA_URL)
-            except TypeError:
-                tab_2_catalogo.mostrar()
+        elif menu == "🏋️ Centro de Entrenamiento":
+            tab_2_catalogo.mostrar(exercises, BASE_MEDIA_URL)
         elif menu == "🍏 Nutrición y Suplementación":
             tab_5_nutricion.mostrar()
         elif menu == "📝 Bitácora Diaria":

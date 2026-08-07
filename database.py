@@ -1,6 +1,7 @@
 import sqlite3
 import hashlib
 import os
+import json  # <-- Nuevo: Necesario para guardar las instrucciones en la BD
 
 # Ruta donde se guardará el archivo de la base de datos
 DB_PATH = os.path.join(os.path.dirname(__file__), 'smart_fitness.db')
@@ -16,10 +17,17 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS usuarios (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT UNIQUE,
-                    password TEXT
+                    password TEXT,
+                    correo TEXT
                 )''')
     
-    # 2. Tabla de Perfiles (ACTUALIZADA con limitaciones y equipo)
+    # Seguro de Migración
+    try:
+        c.execute("ALTER TABLE usuarios ADD COLUMN correo TEXT")
+    except sqlite3.OperationalError:
+        pass
+    
+    # 2. Tabla de Perfiles
     c.execute('''CREATE TABLE IF NOT EXISTS perfiles (
                     user_id INTEGER PRIMARY KEY,
                     nombre TEXT, edad INTEGER, genero TEXT, nivel TEXT,
@@ -28,15 +36,32 @@ def init_db():
                     limitaciones TEXT, equipo TEXT,
                     FOREIGN KEY(user_id) REFERENCES usuarios(id)
                 )''')
+                
+    # 3. NUEVA: Tabla de Planificación Semanal/Mensual
+    c.execute('''CREATE TABLE IF NOT EXISTS planificacion (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    fecha TEXT,
+                    ejercicio_id TEXT,
+                    nombre TEXT,
+                    musculo TEXT,
+                    equipo TEXT,
+                    series INTEGER,
+                    reps INTEGER,
+                    gif_url TEXT,
+                    instrucciones TEXT,
+                    FOREIGN KEY(user_id) REFERENCES usuarios(id)
+                )''')
+                
     conn.commit()
     conn.close()
 
-def crear_usuario(username, password):
+def crear_usuario(username, password, correo=""):
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        c.execute("INSERT INTO usuarios (username, password) VALUES (?, ?)", 
-                  (username, hash_password(password)))
+        c.execute("INSERT INTO usuarios (username, password, correo) VALUES (?, ?, ?)", 
+                  (username, hash_password(password), correo))
         conn.commit()
         conn.close()
         return True
@@ -64,7 +89,6 @@ def guardar_perfil(user_id, datos):
     
     medidas = datos.get('medidas', {})
     
-    # Convertimos las listas a texto separado por comas para poder guardarlo en SQLite
     limitaciones_str = ",".join(datos.get('limitaciones', []))
     equipo_str = ",".join(datos.get('equipo', []))
     
@@ -111,7 +135,6 @@ def obtener_perfil(user_id):
             "nivel": fila["nivel"],
             "estatura": fila["estatura"],
             "peso": fila["peso"],
-            # Volvemos a convertir el texto separado por comas en listas
             "limitaciones": fila["limitaciones"].split(",") if fila["limitaciones"] else [],
             "equipo": fila["equipo"].split(",") if fila["equipo"] else [],
             "medidas": {
@@ -124,5 +147,76 @@ def obtener_perfil(user_id):
             }
         }
     return None
+
+# ==========================================
+# FUNCIONES DE PLANIFICACIÓN (ESCALABLES)
+# ==========================================
+
+def guardar_plan_dia(user_id, fecha, rutina):
+    """Guarda la rutina reemplazando la anterior para evitar duplicados infinitos."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    
+    # 1. Limpiamos los datos anteriores de esa fecha para este usuario
+    c.execute("DELETE FROM planificacion WHERE user_id=? AND fecha=?", (user_id, fecha))
+    
+    # 2. Insertamos la nueva rutina
+    for item in rutina:
+        instrucciones_str = json.dumps(item.get("instrucciones", []))
+        c.execute('''INSERT INTO planificacion 
+                     (user_id, fecha, ejercicio_id, nombre, musculo, equipo, series, reps, gif_url, instrucciones)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                  (user_id, fecha, item.get("id_unico", ""), item.get("nombre", ""), 
+                   item.get("musculo", ""), item.get("equipo", ""), item.get("series", 3), 
+                   item.get("reps", 10), item.get("gif_url", ""), instrucciones_str))
+                   
+    conn.commit()
+    conn.close()
+
+def obtener_plan_dia(user_id, fecha):
+    """Obtiene la lista de ejercicios planeados para un día exacto."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    
+    c.execute("SELECT * FROM planificacion WHERE user_id=? AND fecha=?", (user_id, fecha))
+    filas = c.fetchall()
+    conn.close()
+    
+    rutina = []
+    for fila in filas:
+        rutina.append({
+            "id_unico": fila["ejercicio_id"],
+            "nombre": fila["nombre"],
+            "musculo": fila["musculo"],
+            "equipo": fila["equipo"],
+            "series": fila["series"],
+            "reps": fila["reps"],
+            "gif_url": fila["gif_url"],
+            "instrucciones": json.loads(fila["instrucciones"]) if fila["instrucciones"] else []
+        })
+    return rutina
+
+def obtener_fechas_planificadas(user_id, mes_prefix):
+    """
+    Busca todas las fechas de un mes que tengan rutinas y devuelve qué músculos se entrenan.
+    mes_prefix debe ser en formato 'YYYY-MM' (ej: '2026-08').
+    """
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    # Usamos LIKE para buscar cualquier día dentro de ese mes específico
+    c.execute("SELECT fecha, musculo FROM planificacion WHERE user_id=? AND fecha LIKE ?", (user_id, f"{mes_prefix}%"))
+    filas = c.fetchall()
+    conn.close()
+    
+    # Agrupamos los músculos por cada fecha para poder asignar los emojis luego
+    # Resultado ej: {'2026-08-07': {'Abdominales', 'Espalda'}}
+    res = {}
+    for fecha, musculo in filas:
+        if fecha not in res:
+            res[fecha] = set()
+        res[fecha].add(musculo)
+        
+    return res
 
 init_db()
