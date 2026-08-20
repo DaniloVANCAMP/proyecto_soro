@@ -6,8 +6,8 @@ import requests
 import uuid
 import time
 import streamlit as st
-from datetime import datetime
-import database as db  # <-- CONEXIÓN A LA BASE DE DATOS
+from datetime import datetime, timedelta, date
+import database as db 
 
 URL_JSON = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/data/exercises.json"
 BASE_MEDIA_URL = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/"
@@ -22,7 +22,6 @@ DICCIONARIO_ZONAS = {
     "shoulders": "Hombros", "upper arms": "Brazos", "upper legs": "Piernas / Glúteos",
     "waist": "Cintura / Abdomen"
 }
-
 DICCIONARIO_EQUIPO = {
     "assisted": "Asistido / Máquina de asistencia", "band": "Banda de resistencia",
     "barbell": "Barra recta", "body weight": "Peso corporal (Calistenia)",
@@ -38,7 +37,6 @@ DICCIONARIO_EQUIPO = {
     "upper body ergometer": "Ergómetro superior", "weighted": "Lastrado",
     "wheel roller": "Rueda Abdominal"
 }
-
 DICCIONARIO_MUSCULOS = {
     "glutes": "Glúteos", "gluteus": "Glúteos", "gluteus maximus": "Glúteo Mayor",
     "gluteus medius": "Glúteo Medio", "gluteus minimus": "Glúteo Menor", "hip flexors": "Flexores de Cadera",
@@ -71,7 +69,6 @@ def fmt_musculo(val: str) -> str:
 # ==========================================
 # 2. GESTIÓN DE DATOS Y API
 # ==========================================
-
 @st.cache_data(show_spinner=False)
 def traducir_nombre_ejercicio(texto_ingles):
     if not texto_ingles: return "Desconocido"
@@ -80,8 +77,7 @@ def traducir_nombre_ejercicio(texto_ingles):
         params = {"client": "gtx", "sl": "en", "tl": "es", "dt": "t", "q": texto_ingles}
         respuesta = requests.get(url, params=params, timeout=2)
         if respuesta.status_code == 200:
-            texto_traducido = respuesta.json()[0][0][0]
-            return texto_traducido.title()
+            return respuesta.json()[0][0][0].title()
     except Exception:
         pass
     return texto_ingles.title()
@@ -103,7 +99,6 @@ def cargar_perfil():
         "peso_kg": 70.0, "biceps": 35.0, "abdomen": 85.0, "cintura": 80.0,
         "cadera": 95.0, "gluteos": 100.0, "cuadriceps": 55.0, "pantorrilla": 38.0
     }
-    
     if user_id:
         perfil_db = db.obtener_perfil(user_id)
         if perfil_db:
@@ -157,8 +152,7 @@ def obtener_clima_api(ciudad):
             condicion = datos['current_condition'][0]
             temp = int(condicion['temp_C'])
             desc = condicion.get('weatherDesc', [{'value': 'Desconocido'}])[0]['value']
-            desc_traducida = traducir_nombre_ejercicio(desc)
-            return desc_traducida, temp
+            return traducir_nombre_ejercicio(desc), temp
     except Exception:
         pass
     return "Desconocido", 25
@@ -170,13 +164,9 @@ def cargar_ejercicios_completos():
         respuesta.raise_for_status()
         ejercicios = respuesta.json()
         for ej in ejercicios:
-            bp = ej.get("bodyPart", ej.get("body_part", ""))
-            tg = ej.get("target", "")
-            eq = ej.get("equipment", "")
-            
-            ej["body_part_trad"] = fmt_zona(bp)
-            ej["target_trad"] = fmt_musculo(tg)
-            ej["equipment_trad"] = fmt_equipo(eq)
+            ej["body_part_trad"] = fmt_zona(ej.get("bodyPart", ej.get("body_part", "")))
+            ej["target_trad"] = fmt_musculo(ej.get("target", ""))
+            ej["equipment_trad"] = fmt_equipo(ej.get("equipment", ""))
             ej["gif_url_correcta"] = ej.get("gifUrl", ej.get("gif_url", ""))
         return ejercicios
     except Exception as e:
@@ -186,6 +176,24 @@ def cargar_ejercicios_completos():
 # 3. INTERFAZ PRINCIPAL
 # ==========================================
 def mostrar(exercises_param=None, base_media_url_param=None):
+    # CSS GLAMUROSO INYECTADO AQUÍ
+    st.markdown("""
+    <style>
+    .glam-card {
+        background: linear-gradient(145deg, #1f1f1f 0%, #2a2a2a 100%);
+        border-left: 4px solid #ff4b4b;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+    .glam-mini-btn {
+        background-color: #333; border: 1px solid #555; padding: 10px; 
+        border-radius: 8px; text-align: center; cursor: pointer; color: white;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     st.title("💪 Centro de Entrenamiento")
 
     if exercises_param and len(exercises_param) > 10:
@@ -194,18 +202,15 @@ def mostrar(exercises_param=None, base_media_url_param=None):
         ejercicios = cargar_ejercicios_completos()
 
     if not ejercicios:
-        st.error("No se pudieron cargar los ejercicios. Verifica tu conexión a internet.")
+        st.error("No se pudieron cargar los ejercicios. Verifica tu conexión.")
         return
 
-    # Perfil Biométrico
     perfil_actual = cargar_perfil()
     with st.expander("🧬 Mi Perfil Biométrico (Actualiza tus medidas aquí)", expanded=False):
-        st.info("Estos datos se guardarán y se adjuntarán automáticamente a CADA ejercicio para tu modelo de ML.")
         with st.form("form_biometria"):
             st.subheader("Datos Demográficos")
             col_d1, col_d2, col_d3 = st.columns(3)
             nombre = col_d1.text_input("Nombre", value=perfil_actual["nombre"])
-            
             sexo_db = perfil_actual.get("sexo", "Masculino")
             sexo_idx = ["Masculino", "Femenino", "Otro"].index(sexo_db) if sexo_db in ["Masculino", "Femenino", "Otro"] else 0
             sexo = col_d2.selectbox("Sexo", ["Masculino", "Femenino", "Otro"], index=sexo_idx)
@@ -235,12 +240,11 @@ def mostrar(exercises_param=None, base_media_url_param=None):
                     "cadera": cadera, "gluteos": gluteos, "cuadriceps": cuadriceps, "pantorrilla": pantorrilla
                 }
                 guardar_perfil(nuevos_datos)
-                st.success("¡Perfil biométrico actualizado! Tu modelo de ML te lo agradece. 🧠")
+                st.success("¡Perfil biométrico actualizado!")
                 time.sleep(1.5)
                 st.rerun()
 
     perfil_actual = cargar_perfil()
-
     st.markdown("### 📍 Configuración de la Sesión")
     col_perfil, col_dias, col_obj = st.columns([2, 1, 1], vertical_alignment="bottom")
 
@@ -277,173 +281,155 @@ def mostrar(exercises_param=None, base_media_url_param=None):
                     st.rerun()
 
     st.divider()
-    
-    # NUEVO ORDEN DE PESTAÑAS (Planificador -> Generador -> Catálogo)
     tab_planificador, tab_generador, tab_catalogo = st.tabs(["📅 Planificador Semanal", "⚡ Generador de Rutinas", "🔍 Catálogo de Consulta"])
 
-# --- PESTAÑA 1: PLANIFICADOR SEMANAL (HORARIO ESCOLAR OPTIMIZADO) ---
+# --- PESTAÑA 1: PLANIFICADOR SEMANAL (GLAMUROSO, MÓVIL Y CON IMÁGENES) ---
     with tab_planificador:
-        st.header("📅 Planificador de Entrenamientos")
-        st.write("Selecciona una fecha. Tu semana se organizará automáticamente en la cuadrícula inferior.")
-        
-        # 1. OBTENEMOS EL USUARIO Y LA FECHA
-        user_id = st.session_state.get("user_id")
-        fecha_seleccionada = st.date_input("🗓️ Selecciona la fecha a planificar:")
-        
-        # Diccionario ultraligero de Emojis para que NO se pegue la app
-        EMOJIS_MUSCULOS = {
-            "Abdominales": "🍫", "Pecho": "🦍", "Dorsales": "🦇", "Espalda": "🐢",
-            "Cuádriceps": "🦵", "Isquiotibiales / Femorales": "🍗", "Piernas / Glúteos": "🦵",
-            "Glúteos": "🍑", "Pantorrillas / Gemelos": "🦿", "Bíceps": "💪", 
-            "Tríceps": "🐴", "Brazos": "💪", "Antebrazos": "🔧", 
-            "Deltoides / Hombros": "🥥", "Hombros": "🥥", "Sistema Cardiovascular": "🫀",
-            "Cardio / Resistencia": "🏃", "Cuello": "🦒"
+        # Inyección de CSS Premium sin dañar nada
+        st.markdown("""
+        <style>
+        .glam-card {
+            background: linear-gradient(145deg, #1e1e1e 0%, #2b2b2b 100%);
+            border-left: 4px solid #ff4b4b;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
+        /* Forzar que las columnas del calendario no colapsen en celular */
+        [data-testid="stHorizontalBlock"] { gap: 0.2rem; }
+        </style>
+        """, unsafe_allow_html=True)
 
-        # 2. CONSTRUCCIÓN DE LA CUADRÍCULA SEMANAL (TIPO HORARIO ESCOLAR)
-        if user_id:
-            st.divider()
-            st.markdown("### 🗓️ Tu Semana de Entrenamiento")
+        st.header("📅 Planificador de Entrenamientos")
+        user_id = st.session_state.get("user_id")
+        
+        # Calendario tipo botones (Ideal para celular)
+        st.markdown("### 🗓️ Selecciona un día para ver/editar su rutina")
+        from datetime import timedelta, date
+        hoy = date.today()
+        lunes = hoy - timedelta(days=hoy.weekday())
+        dias_nombres = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+        
+        # Usamos session_state para recordar qué botón se presionó
+        if "dia_activo" not in st.session_state:
+            st.session_state["dia_activo"] = hoy
+
+        cols_dias = st.columns(7)
+        for i, col in enumerate(cols_dias):
+            fecha_iter = lunes + timedelta(days=i)
+            # Consultamos rápido a la BD para poner un indicador visual
+            rutina_previa = db.obtener_plan_dia(user_id, fecha_iter.strftime("%Y-%m-%d")) if user_id else []
+            indicador = "🔥" if rutina_previa else "⚪"
             
-            from datetime import timedelta
-            # Calculamos el Lunes de la semana seleccionada
-            lunes = fecha_seleccionada - timedelta(days=fecha_seleccionada.weekday())
-            dias_semana = [lunes + timedelta(days=i) for i in range(7)]
-            nombres_dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
-            
-            # Dibujamos las 7 columnas
-            cols_semana = st.columns(7)
-            
-            for i, col in enumerate(cols_semana):
-                fecha_dia = dias_semana[i]
-                fecha_str_dia = fecha_dia.strftime("%Y-%m-%d")
-                
-                # Resaltar el día que el usuario tiene seleccionado en el calendario
-                es_hoy_seleccionado = (fecha_dia == fecha_seleccionada)
-                color_fondo = "background-color: #ff4b4b20;" if es_hoy_seleccionado else ""
-                
-                with col:
-                    st.markdown(f"**{nombres_dias[i]}**")
-                    st.caption(fecha_dia.strftime("%d/%m"))
-                    
-                    # Consultamos rápido a la BD qué hay este día
-                    rutina_dia_grid = db.obtener_plan_dia(user_id, fecha_str_dia)
-                    musculos_dia = list(set([r["musculo"] for r in rutina_dia_grid if r.get("musculo")]))
-                    
-                    # Tarjeta del día
-                    st.markdown(f"""
-                    <div style="border: 1px solid #444; border-radius: 8px; padding: 10px; min-height: 100px; {color_fondo}">
-                    """, unsafe_allow_html=True)
-                    
-                    if not musculos_dia:
-                        st.markdown("<div style='text-align: center; color: #888;'>Descanso 😴</div>", unsafe_allow_html=True)
-                    else:
-                        for m in musculos_dia:
-                            emoji = EMOJIS_MUSCULOS.get(m, "🔥")
-                            st.markdown(f"<div style='font-size: 14px; margin-bottom: 4px;'>{emoji} {m}</div>", unsafe_allow_html=True)
-                    
-                    st.markdown("</div><br>", unsafe_allow_html=True)
-                    
-        else:
-            st.error("⚠️ Inicia sesión para guardar y visualizar tu plan.")
+            with col:
+                # Si el usuario hace clic, actualizamos la fecha activa
+                if st.button(f"{dias_nombres[i]}\n{indicador}", key=f"btn_dia_{i}", use_container_width=True):
+                    st.session_state["dia_activo"] = fecha_iter
+
+        fecha_seleccionada = st.session_state["dia_activo"]
+        fecha_str = fecha_seleccionada.strftime("%Y-%m-%d")
+        
+        # Manejo de la rutina temporal (Borrador) antes de guardar
+        if "rutina_borrador" not in st.session_state or st.session_state.get("fecha_borrador") != fecha_str:
+            st.session_state["rutina_borrador"] = db.obtener_plan_dia(user_id, fecha_str) if user_id else []
+            st.session_state["fecha_borrador"] = fecha_str
 
         st.divider()
 
-        # 3. OBTENER LA RUTINA DEL DÍA SELECCIONADO PARA EDITARLA
-        fecha_str = fecha_seleccionada.strftime("%Y-%m-%d")
-        rutina_dia = db.obtener_plan_dia(user_id, fecha_str) if user_id else []
-
-        # 4. APLICAMOS EL FILTRO MAESTRO DE MÁQUINAS
-        ejercicios_plan = ejercicios
-        if equipos_seleccionados:
-            ejercicios_plan = [ej for ej in ejercicios if ej.get("equipment_trad") in equipos_seleccionados]
-        else:
-            ejercicios_plan = []
-
-        if perfil_elegido != "➕ Crear nuevo lugar/perfil...":
-            equipos_str = ", ".join(equipos_seleccionados) if equipos_seleccionados else "Ningún equipo seleccionado"
-            st.info(f"📍 **Lugar activo para agregar:** {perfil_elegido} | ⚙️ **Filtro:** {equipos_str}")
-
         # --- SECCIÓN A: AGREGAR EJERCICIOS ---
+        ejercicios_plan = [ej for ej in ejercicios if ej.get("equipment_trad") in equipos_seleccionados] if equipos_seleccionados else []
+
         with st.container(border=True):
             st.subheader(f"Añadir ejercicio al {fecha_str}")
-            
             if not ejercicios_plan:
-                st.warning("⚠️ Selecciona al menos un equipo en la Configuración de Sesión.")
+                st.warning("⚠️ Selecciona al menos un equipo arriba.")
             else:
                 todos_los_musculos = sorted(list(set([ej.get("target_trad") for ej in ejercicios_plan if ej.get("target_trad")])))
-                musculos_elegidos = st.multiselect("1️⃣ Selecciona el Músculo:", todos_los_musculos)
+                musculos_elegidos = st.multiselect("1️⃣ Selecciona Músculo(s):", todos_los_musculos)
                 
                 if musculos_elegidos:
-                    st.markdown("### Catálogo de Ejercicios Disponibles")
+                    # Obtenemos los nombres de los ejercicios que YA están en el borrador para ocultarlos
+                    nombres_usados = [ej["nombre"] for ej in st.session_state["rutina_borrador"]]
+                    
                     for musculo in musculos_elegidos:
                         st.markdown(f"<h3 style='color: #FF4B4B;'>🎯 {musculo}</h3>", unsafe_allow_html=True)
-                        ejercicios_por_musculo = [ej for ej in ejercicios_plan if ej.get("target_trad") == musculo]
-                        equipos_viables = sorted(list(set([ej.get("equipment_trad") for ej in ejercicios_por_musculo if ej.get("equipment_trad")])))
+                        ej_musculo = [ej for ej in ejercicios_plan if ej.get("target_trad") == musculo]
+                        equipos_viables = sorted(list(set([ej.get("equipment_trad") for ej in ej_musculo if ej.get("equipment_trad")])))
                         
                         for equipo in equipos_viables:
-                            st.markdown(f"#### ⚙️ {equipo}")
-                            ejercicios_finales = [ej for ej in ejercicios_por_musculo if ej.get("equipment_trad") == equipo]
+                            # Filtramos por equipo Y eliminamos los que ya seleccionaste
+                            ej_finales = [ej for ej in ej_musculo if ej.get("equipment_trad") == equipo and traducir_nombre_ejercicio(ej.get("name", "")) not in nombres_usados]
                             
-                            cols = st.columns(2)
-                            for idx, ej_data in enumerate(ejercicios_finales):
-                                col_actual = cols[idx % 2]
-                                with col_actual:
-                                    with st.container(border=True):
-                                        nombre_ej = traducir_nombre_ejercicio(ej_data.get("name", ""))
-                                        st.markdown(f"**{nombre_ej}**")
-                                        
+                            if ej_finales:
+                                st.markdown(f"#### ⚙️ {equipo}")
+                                for ej_data in ej_finales:
+                                    nombre_ej = traducir_nombre_ejercicio(ej_data.get("name", ""))
+                                    
+                                    # Tarjeta Glamurosa ¡CON IMAGEN RESTAURADA!
+                                    st.markdown('<div class="glam-card">', unsafe_allow_html=True)
+                                    c_img, c_txt, c_btn = st.columns([1, 2.5, 1], vertical_alignment="center")
+                                    
+                                    with c_img:
                                         if ej_data.get("gif_url_correcta"):
                                             st.image(f"{BASE_MEDIA_URL}{ej_data.get('gif_url_correcta').lstrip('/')}", use_container_width=True)
-                                        
+                                            
+                                    with c_txt:
+                                        st.markdown(f"**{nombre_ej}**")
+                                        # Opcional: mostrar instrucciones si existen
                                         instrucciones = ej_data.get("instructions", [])
                                         if isinstance(instrucciones, list) and instrucciones:
-                                            with st.expander("📖 Ver instrucciones"):
-                                                for paso in instrucciones:
-                                                    st.write(f"- {paso}")
-                                        
-                                        c_ser, c_rep = st.columns(2)
-                                        ej_id = ej_data.get("id", str(uuid.uuid4()))
-                                        series_plan = c_ser.number_input("Series", min_value=1, value=3, key=f"s_{fecha_str}_{ej_id}_{idx}")
-                                        reps_plan = c_rep.number_input("Reps", min_value=1, value=10, key=f"r_{fecha_str}_{ej_id}_{idx}")
-                                        
-                                        if st.button("➕ Añadir", key=f"b_{fecha_str}_{ej_id}_{idx}", use_container_width=True, type="primary"):
-                                            if user_id:
-                                                nuevo_item = {
-                                                    "id_unico": str(uuid.uuid4()),
-                                                    "nombre": nombre_ej, "musculo": musculo, "equipo": equipo,
-                                                    "series": series_plan, "reps": reps_plan,
-                                                    "gif_url": ej_data.get("gif_url_correcta", ""),
-                                                    "instrucciones": instrucciones
-                                                }
-                                                nueva_rutina = rutina_dia.copy()
-                                                nueva_rutina.append(nuevo_item)
-                                                db.guardar_plan_dia(user_id, fecha_str, nueva_rutina)
-                                                st.toast("¡Añadido!")
-                                                time.sleep(0.5)
-                                                st.rerun()
+                                            with st.expander("📖 Instrucciones"):
+                                                for paso in instrucciones[:2]: # Muestra solo los 2 primeros pasos para no alargar
+                                                    st.caption(f"- {paso}")
+                                                    
+                                    with c_btn:
+                                        if st.button("➕ Seleccionar", key=f"sel_{ej_data['id']}", use_container_width=True):
+                                            nuevo_item = {
+                                                "id_unico": str(uuid.uuid4()), "nombre": nombre_ej,
+                                                "musculo": musculo, "equipo": equipo, "series": 3, "reps": 10,
+                                                "gif_url": ej_data.get("gif_url_correcta", ""),
+                                                "instrucciones": ej_data.get("instructions", [])
+                                            }
+                                            st.session_state["rutina_borrador"].append(nuevo_item)
+                                            st.rerun()
+                                    st.markdown('</div>', unsafe_allow_html=True)
 
-        # --- SECCIÓN B: VER RUTINA DEL DÍA ---
-        st.subheader(f"📋 Rutina planificada para el {fecha_str}")
-        if not rutina_dia:
-            st.info("No hay ejercicios para este día.")
+        # --- SECCIÓN B: VER Y GUARDAR RUTINA ---
+        st.subheader(f"📋 Borrador de Rutina para el {fecha_str}")
+        if not st.session_state["rutina_borrador"]:
+            st.info("Aún no has seleccionado ejercicios para este día.")
         else:
-            for idx, item in enumerate(rutina_dia):
-                with st.container(border=True):
-                    c1, c2, c3 = st.columns([1.5, 3, 1], vertical_alignment="center")
-                    with c1:
-                        if item.get("gif_url"):
-                            st.image(f"{BASE_MEDIA_URL}{item['gif_url'].lstrip('/')}", use_container_width=True)
-                    with c2:
-                        st.markdown(f"**{idx + 1}. {item['nombre']}**")
-                        st.caption(f"🎯 {item['musculo']} | ⚙️ {item['equipo']}")
-                        st.write(f"💪 {item['series']} Series x {item['reps']} Reps")
-                    with c3:
-                        if st.button("❌ Quitar", key=f"d_{fecha_str}_{item['id_unico']}", use_container_width=True):
-                            nueva_rutina = rutina_dia.copy()
-                            nueva_rutina.pop(idx)
-                            db.guardar_plan_dia(user_id, fecha_str, nueva_rutina)
-                            st.rerun()
+            for idx, item in enumerate(st.session_state["rutina_borrador"]):
+                st.markdown('<div class="glam-card">', unsafe_allow_html=True)
+                # Restauramos la imagen en la vista del borrador también
+                c_img2, c1, c2, c3, c4 = st.columns([1, 2, 1, 1, 1], vertical_alignment="center")
+                
+                with c_img2:
+                    if item.get("gif_url"):
+                        st.image(f"{BASE_MEDIA_URL}{item['gif_url'].lstrip('/')}", use_container_width=True)
+                with c1:
+                    st.markdown(f"**{idx + 1}. {item['nombre']}**")
+                    st.caption(f"🎯 {item['musculo']} | ⚙️ {item['equipo']}")
+                with c2:
+                    item["series"] = st.number_input("Series", min_value=1, value=item["series"], key=f"s_{item['id_unico']}", label_visibility="collapsed")
+                with c3:
+                    item["reps"] = st.number_input("Reps", min_value=1, value=item["reps"], key=f"r_{item['id_unico']}", label_visibility="collapsed")
+                with c4:
+                    if st.button("❌", key=f"del_b_{item['id_unico']}", use_container_width=True):
+                        st.session_state["rutina_borrador"].pop(idx)
+                        st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+            # BOTÓN FINAL DE GUARDADO
+            if st.button("💾 GUARDAR RUTINA DEL DÍA", type="primary", use_container_width=True):
+                if user_id:
+                    db.guardar_plan_dia(user_id, fecha_str, st.session_state["rutina_borrador"])
+                    st.success(f"¡Rutina guardada exitosamente en la base de datos para el {fecha_str}!")
+                    time.sleep(1.5)
+                    st.rerun()
+                else:
+                    st.error("Debes iniciar sesión para guardar.")
 # --- PESTAÑA 2: GENERADOR ---
     with tab_generador:
         col_gen1, col_gen2 = st.columns(2)
@@ -462,7 +448,6 @@ def mostrar(exercises_param=None, base_media_url_param=None):
         if st.button("⚡ Generar Rutina", type="primary", use_container_width=True, disabled=btn_deshabilitado):
             candidatos_equipo = ejercicios
             if equipos_seleccionados:
-                # SE CORRIGIÓ EL BUG DEL PESO CORPORAL (ahora es estricto a tu selección)
                 candidatos_equipo = [ej for ej in ejercicios if ej.get("equipment_trad") in equipos_seleccionados]
 
             candidatos_finales = []
@@ -534,12 +519,10 @@ def mostrar(exercises_param=None, base_media_url_param=None):
             if st.button("💾 GUARDAR MICRODATOS COMPLETOS EN BITÁCORA", type="primary", use_container_width=True):
                 datos_a_guardar = []
                 fecha_actual = datetime.now().isoformat()
-                
                 for idx, ej in enumerate(rutina):
                     if st.session_state.get(f"check_{idx}"):
                         microdato = {
-                            "id_evento": str(uuid.uuid4()),
-                            "timestamp": fecha_actual,
+                            "id_evento": str(uuid.uuid4()), "timestamp": fecha_actual,
                             "user_id": st.session_state.get("user_id"),
                             "usuario": {
                                 "nombre": perfil_actual["nombre"], "sexo": perfil_actual["sexo"],
@@ -563,10 +546,8 @@ def mostrar(exercises_param=None, base_media_url_param=None):
                                 "esfuerzo_rpe": esfuerzo_rpe, "objetivo_entrenamiento": objetivo
                             },
                             "ejercicio": {
-                                "id_api": ej.get("id"),
-                                "nombre": traducir_nombre_ejercicio(ej.get("name", "")),
-                                "musculo_objetivo": ej.get("target_trad"),
-                                "zona_cuerpo": ej.get("body_part_trad"),
+                                "id_api": ej.get("id"), "nombre": traducir_nombre_ejercicio(ej.get("name", "")),
+                                "musculo_objetivo": ej.get("target_trad"), "zona_cuerpo": ej.get("body_part_trad"),
                                 "equipo_usado": ej.get("equipment_trad")
                             },
                             "ejecucion": {
@@ -587,7 +568,6 @@ def mostrar(exercises_param=None, base_media_url_param=None):
         st.header("Catálogo de Consulta")
         ej_filtrados = ejercicios
         if equipos_seleccionados:
-            # SE CORRIGIÓ EL BUG DEL PESO CORPORAL (ahora es estricto a tu selección)
             ej_filtrados = [ej for ej in ej_filtrados if ej.get("equipment_trad") in equipos_seleccionados]
         
         c1, c2 = st.columns(2)

@@ -1,7 +1,7 @@
 import sqlite3
 import hashlib
 import os
-import json  # <-- Nuevo: Necesario para guardar las instrucciones en la BD
+import json
 
 # Ruta donde se guardará el archivo de la base de datos
 DB_PATH = os.path.join(os.path.dirname(__file__), 'smart_fitness.db')
@@ -21,7 +21,6 @@ def init_db():
                     correo TEXT
                 )''')
     
-    # Seguro de Migración
     try:
         c.execute("ALTER TABLE usuarios ADD COLUMN correo TEXT")
     except sqlite3.OperationalError:
@@ -36,8 +35,8 @@ def init_db():
                     limitaciones TEXT, equipo TEXT,
                     FOREIGN KEY(user_id) REFERENCES usuarios(id)
                 )''')
-                
-    # 3. NUEVA: Tabla de Planificación Semanal/Mensual
+
+    # 3. Tabla de Planificación Semanal
     c.execute('''CREATE TABLE IF NOT EXISTS planificacion (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER,
@@ -68,17 +67,18 @@ def crear_usuario(username, password, correo=""):
     except sqlite3.IntegrityError:
         return False
 
-def verificar_usuario(username, password):
+def verificar_usuario(identificador, password):
+    # Ahora permite iniciar sesión con Correo O Usuario
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("SELECT id FROM usuarios WHERE username=? AND password=?", 
-              (username, hash_password(password)))
+    c.execute("SELECT id, username FROM usuarios WHERE (correo=? OR username=?) AND password=?", 
+              (identificador, identificador, hash_password(password)))
     user = c.fetchone()
     conn.close()
     
     if user:
-        return user[0]
-    return None
+        return user[0], user[1] # Retorna (ID, NombreUsuario)
+    return None, None
 
 def guardar_perfil(user_id, datos):
     conn = sqlite3.connect(DB_PATH)
@@ -88,7 +88,6 @@ def guardar_perfil(user_id, datos):
     existe = c.fetchone()
     
     medidas = datos.get('medidas', {})
-    
     limitaciones_str = ",".join(datos.get('limitaciones', []))
     equipo_str = ",".join(datos.get('equipo', []))
     
@@ -114,7 +113,6 @@ def guardar_perfil(user_id, datos):
                    medidas.get('pecho', 0), medidas.get('cintura', 0), medidas.get('pierna', 0), 
                    medidas.get('brazo', 0), medidas.get('cadera', 0), medidas.get('pantorrilla', 0),
                    limitaciones_str, equipo_str))
-    
     conn.commit()
     conn.close()
 
@@ -122,101 +120,52 @@ def obtener_perfil(user_id):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    
     c.execute("SELECT * FROM perfiles WHERE user_id=?", (user_id,))
     fila = c.fetchone()
     conn.close()
     
     if fila:
         return {
-            "nombre": fila["nombre"],
-            "edad": fila["edad"],
-            "genero": fila["genero"],
-            "nivel": fila["nivel"],
-            "estatura": fila["estatura"],
-            "peso": fila["peso"],
+            "nombre": fila["nombre"], "edad": fila["edad"], "genero": fila["genero"],
+            "nivel": fila["nivel"], "estatura": fila["estatura"], "peso": fila["peso"],
             "limitaciones": fila["limitaciones"].split(",") if fila["limitaciones"] else [],
             "equipo": fila["equipo"].split(",") if fila["equipo"] else [],
             "medidas": {
-                "pecho": fila["pecho"],
-                "cintura": fila["cintura"],
-                "pierna": fila["piernas"],
-                "brazo": fila["brazos"],
-                "cadera": fila["cadera"],
-                "pantorrilla": fila["pantorrillas"]
+                "pecho": fila["pecho"], "cintura": fila["cintura"], "pierna": fila["piernas"],
+                "brazo": fila["brazos"], "cadera": fila["cadera"], "pantorrilla": fila["pantorrillas"]
             }
         }
     return None
 
-# ==========================================
-# FUNCIONES DE PLANIFICACIÓN (ESCALABLES)
-# ==========================================
-
 def guardar_plan_dia(user_id, fecha, rutina):
-    """Guarda la rutina reemplazando la anterior para evitar duplicados infinitos."""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    
-    # 1. Limpiamos los datos anteriores de esa fecha para este usuario
     c.execute("DELETE FROM planificacion WHERE user_id=? AND fecha=?", (user_id, fecha))
-    
-    # 2. Insertamos la nueva rutina
     for item in rutina:
-        instrucciones_str = json.dumps(item.get("instrucciones", []))
+        inst_str = json.dumps(item.get("instrucciones", []))
         c.execute('''INSERT INTO planificacion 
                      (user_id, fecha, ejercicio_id, nombre, musculo, equipo, series, reps, gif_url, instrucciones)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                   (user_id, fecha, item.get("id_unico", ""), item.get("nombre", ""), 
                    item.get("musculo", ""), item.get("equipo", ""), item.get("series", 3), 
-                   item.get("reps", 10), item.get("gif_url", ""), instrucciones_str))
-                   
+                   item.get("reps", 10), item.get("gif_url", ""), inst_str))
     conn.commit()
     conn.close()
 
 def obtener_plan_dia(user_id, fecha):
-    """Obtiene la lista de ejercicios planeados para un día exacto."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    
     c.execute("SELECT * FROM planificacion WHERE user_id=? AND fecha=?", (user_id, fecha))
     filas = c.fetchall()
     conn.close()
-    
     rutina = []
     for fila in filas:
         rutina.append({
-            "id_unico": fila["ejercicio_id"],
-            "nombre": fila["nombre"],
-            "musculo": fila["musculo"],
-            "equipo": fila["equipo"],
-            "series": fila["series"],
-            "reps": fila["reps"],
-            "gif_url": fila["gif_url"],
-            "instrucciones": json.loads(fila["instrucciones"]) if fila["instrucciones"] else []
+            "id_unico": fila["ejercicio_id"], "nombre": fila["nombre"], "musculo": fila["musculo"],
+            "equipo": fila["equipo"], "series": fila["series"], "reps": fila["reps"],
+            "gif_url": fila["gif_url"], "instrucciones": json.loads(fila["instrucciones"]) if fila["instrucciones"] else []
         })
     return rutina
-
-def obtener_fechas_planificadas(user_id, mes_prefix):
-    """
-    Busca todas las fechas de un mes que tengan rutinas y devuelve qué músculos se entrenan.
-    mes_prefix debe ser en formato 'YYYY-MM' (ej: '2026-08').
-    """
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    # Usamos LIKE para buscar cualquier día dentro de ese mes específico
-    c.execute("SELECT fecha, musculo FROM planificacion WHERE user_id=? AND fecha LIKE ?", (user_id, f"{mes_prefix}%"))
-    filas = c.fetchall()
-    conn.close()
-    
-    # Agrupamos los músculos por cada fecha para poder asignar los emojis luego
-    # Resultado ej: {'2026-08-07': {'Abdominales', 'Espalda'}}
-    res = {}
-    for fecha, musculo in filas:
-        if fecha not in res:
-            res[fecha] = set()
-        res[fecha].add(musculo)
-        
-    return res
 
 init_db()
