@@ -12,42 +12,54 @@ from PIL import Image
 # ==========================================
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Forzamos a la IA a responder SOLO en formato JSON estructurado
     modelo_ia = genai.GenerativeModel(
         'gemini-1.5-flash', 
         generation_config={"response_mime_type": "application/json"}
     )
 except Exception as e:
     modelo_ia = None
-    st.error(f"⚠️ Error al configurar IA: {e}")
 
-def analizar_alimento_ia(texto_usuario, archivo_imagen=None):
-    if not modelo_ia: return None
+def analizar_alimento_ia(texto_usuario="", archivo_imagen=None, archivo_audio=None):
+    if not modelo_ia: 
+        return None, "La clave GEMINI_API_KEY no está configurada correctamente en st.secrets."
     
     prompt_sistema = """
-    Eres un nutricionista experto. Analiza el texto o la imagen de la tabla nutricional. 
-    Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta, calculando los totales de la porción principal. No incluyas markdown, solo el JSON:
+    Eres un nutricionista experto en cálculo preciso de macros y matemática de recetas.
+    Analiza la descripción en texto, la imagen de la tabla nutricional o la nota de voz del usuario.
+    
+    REGLAS DE CÁLCULO DE RECETAS Y PORCIONES:
+    1. Si el usuario describe una preparación completa con sus ingredientes totales (ej: "preparé 500g de arroz con 20ml de aceite") y luego indica la porción que se comió (ej: "de ahí me comí 100g"), debes calcular la regla de tres matemática para extraer ÚNICAMENTE las calorías y macronutrientes de la porción efectivamente consumida.
+    2. Considera métodos de cocción (frijoles cocidos, pechuga frita con aceite, etc.).
+    3. Si el usuario no especifica la porción consumida, asume que consumió la preparación descrita.
+
+    Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta, sin código markdown extra ni texto explicativo:
     {
-        "nombre": "Nombre del producto o plato",
-        "porcion": "Ej: 100g, 1 paquete, 1 unidad",
+        "nombre": "Nombre claro del plato o alimento consumido",
+        "porcion": "Descripción de la porción consumida (Ej: 100g de 500g preparados)",
         "calorias": 0,
         "proteina": 0.0,
         "carbohidratos": 0.0,
         "grasas": 0.0
     }
-    Si no es exacto, haz tu mejor estimación profesional.
     """
     try:
+        contenido = [prompt_sistema]
+        
         if archivo_imagen:
             img = Image.open(archivo_imagen)
-            respuesta = modelo_ia.generate_content([prompt_sistema, img])
+            contenido.append(img)
+        elif archivo_audio:
+            audio_bytes = archivo_audio.read()
+            mime_type = archivo_audio.type or "audio/wav"
+            contenido.append({"mime_type": mime_type, "data": audio_bytes})
         else:
-            respuesta = modelo_ia.generate_content([prompt_sistema, texto_usuario])
+            contenido.append(texto_usuario)
             
-        return json.loads(respuesta.text)
+        respuesta = modelo_ia.generate_content(contenido)
+        texto_limpio = respuesta.text.replace("```json", "").replace("```", "").strip()
+        return json.loads(texto_limpio), None
     except Exception as e:
-        print(f"Error IA: {e}")
-        return None
+        return None, str(e)
 
 # ==========================================
 # CARGA HÍBRIDA DE ALIMENTOS
@@ -132,42 +144,84 @@ def mostrar():
     st.divider()
 
     # ==========================================
-    # CREADOR DE ALIMENTOS CON IA INTEGRADA
+    # CREADOR DE ALIMENTOS CON IA MULTIMODAL
     # ==========================================
-    with st.expander("✨ Crear alimento con IA o Manualmente"):
+    with st.expander("✨ Crear alimento con IA (Texto, Fotos o Voz)"):
         
         tab_ia, tab_manual = st.tabs(["🤖 Analizador IA", "✍️ Manual"])
         
         with tab_ia:
-            st.caption("Toma una foto de una tabla nutricional o describe tu comida. La IA extraerá los macros por ti.")
-            opcion_ia = st.radio("Método de entrada:", ["📸 Cámara", "📝 Texto"], horizontal=True)
+            st.caption("Usa la cámara, redacta o narra tu receta en audio. La IA calculará la porción exacta.")
+            opcion_ia = st.radio("Método de entrada:", ["📝 Texto / Receta", "🎙️ Audio / Voz", "📸 Cámara"], horizontal=True)
             
             resultado_ia = None
+            error_ia = None
             
-            if opcion_ia == "📸 Cámara":
+            if opcion_ia == "📝 Texto / Receta":
+                desc = st.text_area(
+                    "Describe tu comida o receta detallada:", 
+                    placeholder="Ej: Preparé 500g de arroz blanco con 20ml de aceite y sal. De eso me comí 150g. Acompañé con 100g de pechuga frita.",
+                    height=100
+                )
+                if desc and st.button("Calcular Receta con IA ✨", type="primary", use_container_width=True):
+                    with st.status("🧠 Analizando texto con Gemini...", expanded=True) as status:
+                        st.write("📡 Procesando ingredientes y calculando proporciones...")
+                        resultado_ia, error_ia = analizar_alimento_ia(texto_usuario=desc)
+                        if error_ia:
+                            status.update(label="❌ Error al procesar texto", state="error", expanded=True)
+                        else:
+                            status.update(label="✅ ¡Cálculo completado!", state="complete", expanded=False)
+
+            elif opcion_ia == "🎙️ Audio / Voz":
+                st.info("💡 **Consejo:** Narra la receta brevemente (máx. 45 seg). Ej: *'Me comí 150g de un arroz que hice con medio kilo de arroz y dos cucharadas de aceite...'*")
+                audio_file = st.audio_input("Graba tu nota de voz narrando tu comida:")
+                if audio_file and st.button("Analizar Audio de Voz ✨", type="primary", use_container_width=True):
+                    with st.status("🧠 Escuchando y analizando voz con Gemini...", expanded=True) as status:
+                        st.write("🎙️ Convirtiendo voz a datos nutricionales...")
+                        resultado_ia, error_ia = analizar_alimento_ia(archivo_audio=audio_file)
+                        if error_ia:
+                            status.update(label="❌ Error al procesar el audio", state="error", expanded=True)
+                        else:
+                            status.update(label="✅ ¡Audio interpretado con éxito!", state="complete", expanded=False)
+
+            elif opcion_ia == "📸 Cámara":
                 foto = st.camera_input("Toma foto de la tabla nutricional")
-                if foto and st.button("Analizar Foto con IA ✨", type="primary"):
-                    with st.spinner("Procesando imagen con Gemini..."):
-                        resultado_ia = analizar_alimento_ia("", archivo_imagen=foto)
-            else:
-                desc = st.text_area("Describe qué comiste", placeholder="Ej: Me comí una hamburguesa doble con queso y tocineta")
-                if desc and st.button("Calcular con IA ✨", type="primary"):
-                    with st.spinner("Analizando receta con Gemini..."):
-                        resultado_ia = analizar_alimento_ia(desc)
+                if foto and st.button("Analizar Foto con IA ✨", type="primary", use_container_width=True):
+                    with st.status("🧠 Procesando imagen con Gemini...", expanded=True) as status:
+                        st.write("📡 Escaneando tabla nutricional...")
+                        resultado_ia, error_ia = analizar_alimento_ia(archivo_imagen=foto)
+                        if error_ia:
+                            status.update(label="❌ Error al analizar la imagen", state="error", expanded=True)
+                        else:
+                            status.update(label="✅ ¡Tabla leída con éxito!", state="complete", expanded=False)
+
+            if error_ia:
+                st.error(f"⚠️ Ocurrió un error técnico: {error_ia}")
 
             if resultado_ia:
-                st.success("¡Análisis completado! Revisa los datos y guárdalos.")
-                # Pre-llenamos el session_state para el formulario manual
+                st.success("🎉 **Análisis completado con éxito:**")
+                
                 st.session_state['ia_nom'] = resultado_ia.get('nombre', '')
                 st.session_state['ia_porc'] = str(resultado_ia.get('porcion', '1 porción'))
                 st.session_state['ia_cal'] = int(resultado_ia.get('calorias', 0))
                 st.session_state['ia_pro'] = float(resultado_ia.get('proteina', 0.0))
                 st.session_state['ia_car'] = float(resultado_ia.get('carbohidratos', 0.0))
                 st.session_state['ia_gra'] = float(resultado_ia.get('grasas', 0.0))
+                
+                m1, m2 = st.columns(2)
+                m1.metric("Alimento / Plato", st.session_state['ia_nom'])
+                m2.metric("Porción Consumida", st.session_state['ia_porc'])
+                
+                k1, k2, k3, k4 = st.columns(4)
+                k1.metric("Calorías", f"{st.session_state['ia_cal']} kcal")
+                k2.metric("Proteína", f"{st.session_state['ia_pro']} g")
+                k3.metric("Carbs", f"{st.session_state['ia_car']} g")
+                k4.metric("Grasas", f"{st.session_state['ia_gra']} g")
+                
+                st.info("👉 Cambia a la pestaña **✍️ Manual** justo arriba para guardar este alimento en la base de datos.")
 
         with tab_manual:
             with st.form("form_nuevo_alimento"):
-                # Usamos los datos de IA si existen, si no, vacíos
                 nom_alim = st.text_input("Nombre", value=st.session_state.get('ia_nom', ''))
                 porc_alim = st.text_input("Porción base", value=st.session_state.get('ia_porc', ''))
                 
@@ -191,7 +245,6 @@ def mostrar():
                         }
                         if db.guardar_alimento_personalizado(user_id, nuevo_doc, es_publico=es_pub):
                             st.success(f"✅ ¡'{nom_alim}' guardado!")
-                            # Limpiar memoria de IA
                             for k in ['ia_nom', 'ia_porc', 'ia_cal', 'ia_pro', 'ia_car', 'ia_gra']:
                                 st.session_state.pop(k, None)
                             st.rerun()
