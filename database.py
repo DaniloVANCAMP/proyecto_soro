@@ -1,19 +1,19 @@
-import os
 import hashlib
 import firebase_admin
 from firebase_admin import credentials, firestore
-import streamlit as st  # <-- NUEVO: Para usar la memoria caché
+import streamlit as st
 
-# Blindaje de ruta para la llave de Firebase
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-KEY_PATH = os.path.join(ROOT_DIR, "firebase_key.json")
-
+# ==========================================
+# INICIALIZACIÓN DEFINITIVA Y SEGURA (SECRETS)
+# ==========================================
 if not firebase_admin._apps:
-    if os.path.exists(KEY_PATH):
-        cred = credentials.Certificate(KEY_PATH)
+    try:
+        # Streamlit lee automáticamente de la nube o de .streamlit/secrets.toml
+        cred_dict = dict(st.secrets["firebase"])
+        cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
-    else:
-        raise FileNotFoundError(f"⚠️ No se encontró 'firebase_key.json' en la ruta: {KEY_PATH}")
+    except Exception as e:
+        raise ValueError(f"⚠️ No se encontraron las credenciales en Streamlit Secrets. Por favor configura los secretos. Detalle: {e}")
 
 db = firestore.client()
 
@@ -155,3 +155,41 @@ def guardar_en_bitacora(lista_microdatos):
                 db.collection("bitacora").document(str(doc_id)).set(item)
     except Exception as e:
         print(f"Error al guardar en bitacora: {e}")
+
+# ==========================================
+# 5. ALIMENTOS COMUNITARIOS (CATÁLOGO GRATIS)
+# ==========================================
+def guardar_alimento_personalizado(user_id, datos_alimento, es_publico=True):
+    try:
+        doc_ref = db.collection("alimentos_comunidad").document()
+        datos_alimento["creado_por"] = str(user_id)
+        datos_alimento["es_publico"] = es_publico
+        doc_ref.set(datos_alimento)
+        st.cache_data.clear() # Invalida el caché para que aparezca de una
+        return True
+    except Exception as e:
+        print(f"Error al guardar alimento: {e}")
+        return False
+
+@st.cache_data(ttl=300)
+def obtener_alimentos_comunitarios(user_id):
+    alimentos_dict = {}
+    try:
+        users_ref = db.collection("alimentos_comunidad")
+        # Trae los alimentos públicos O los privados creados por este usuario
+        docs_publicos = users_ref.where("es_publico", "==", True).get()
+        docs_privados = users_ref.where("creado_por", "==", str(user_id)).where("es_publico", "==", False).get()
+        
+        for doc in docs_publicos + docs_privados:
+            d = doc.to_dict()
+            nombre_key = f"{d['nombre']} ({d['porcion']})"
+            alimentos_dict[nombre_key] = {
+                "cal": d.get("calorias", 0),
+                "carbos": d.get("carbohidratos", 0.0),
+                "proteina": d.get("proteina", 0.0),
+                "grasas": d.get("grasas", 0.0)
+            }
+        return alimentos_dict
+    except Exception as e:
+        print(f"Error al obtener alimentos comunitarios: {e}")
+        return {}
