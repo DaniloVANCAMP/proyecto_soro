@@ -8,27 +8,20 @@ import google.generativeai as genai
 from PIL import Image
 
 # ==========================================
-# CONFIGURACIÓN DE IA (GEMINI)
+# CONFIGURACIÓN DE IA (GEMINI MULTIMODAL)
 # ==========================================
-try:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    modelo_ia = genai.GenerativeModel(
-        'gemini-1.5-flash', 
-        generation_config={"response_mime_type": "application/json"}
-    )
-except Exception as e:
-    modelo_ia = None
-
 def analizar_alimento_ia(texto_usuario="", archivo_imagen=None, archivo_audio=None):
-    if not modelo_ia: 
-        return None, "La clave GEMINI_API_KEY no está configurada correctamente en st.secrets."
+    if "GEMINI_API_KEY" not in st.secrets: 
+        return None, "La clave GEMINI_API_KEY no está configurada en st.secrets."
     
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+
     prompt_sistema = """
     Eres un nutricionista experto en cálculo preciso de macros y matemática de recetas.
     Analiza la descripción en texto, la imagen de la tabla nutricional o la nota de voz del usuario.
     
     REGLAS DE CÁLCULO DE RECETAS Y PORCIONES:
-    1. Si el usuario describe una preparación completa con sus ingredientes totales (ej: "preparé 500g de arroz con 20ml de aceite") y luego indica la porción que se comió (ej: "de ahí me comí 100g"), debes calcular la regla de tres matemática para extraer ÚNICAMENTE las calorías y macronutrientes de la porción efectivamente consumida.
+    1. Si el usuario describe una preparación completa con sus ingredientes totales y luego indica la porción que se comió, debes calcular la regla de tres matemática para extraer ÚNICAMENTE las calorías y macronutrientes de la porción efectivamente consumida.
     2. Considera métodos de cocción (frijoles cocidos, pechuga frita con aceite, etc.).
     3. Si el usuario no especifica la porción consumida, asume que consumió la preparación descrita.
 
@@ -42,9 +35,9 @@ def analizar_alimento_ia(texto_usuario="", archivo_imagen=None, archivo_audio=No
         "grasas": 0.0
     }
     """
+    
+    contenido = [prompt_sistema]
     try:
-        contenido = [prompt_sistema]
-        
         if archivo_imagen:
             img = Image.open(archivo_imagen)
             contenido.append(img)
@@ -54,12 +47,36 @@ def analizar_alimento_ia(texto_usuario="", archivo_imagen=None, archivo_audio=No
             contenido.append({"mime_type": mime_type, "data": audio_bytes})
         else:
             contenido.append(texto_usuario)
-            
-        respuesta = modelo_ia.generate_content(contenido)
-        texto_limpio = respuesta.text.replace("```json", "").replace("```", "").strip()
-        return json.loads(texto_limpio), None
-    except Exception as e:
-        return None, str(e)
+    except Exception as err_prep:
+        return None, f"Error al procesar el archivo de entrada: {err_prep}"
+
+    # Modelos activos recomendados por la API
+    modelos_candidatos = [
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-3.6-flash',
+        'gemini-2.5-flash'
+    ]
+    
+    ultimo_error = None
+
+    for nombre_modelo in modelos_candidatos:
+        try:
+            modelo = genai.GenerativeModel(
+                nombre_modelo, 
+                generation_config={"response_mime_type": "application/json"}
+            )
+            respuesta = modelo.generate_content(contenido)
+            texto_limpio = respuesta.text.replace("```json", "").replace("```", "").strip()
+            return json.loads(texto_limpio), None
+        except Exception as e:
+            ultimo_error = str(e)
+            if "404" in str(e) or "not found" in str(e).lower():
+                continue
+            else:
+                break
+
+    return None, ultimo_error
 
 # ==========================================
 # CARGA HÍBRIDA DE ALIMENTOS
@@ -134,7 +151,7 @@ def mostrar():
     totales_dia = calcular_totales_dia(comidas_guardadas)
 
     # DASHBOARD
-    st.markdown(f"<div class='titulo-nutricion'>Resumen Totales</div>", unsafe_allow_html=True)
+    st.markdown("<div class='titulo-nutricion'>Resumen Totales</div>", unsafe_allow_html=True)
     c1, c2, c3, c4 = st.columns(4)
     with c1: st.markdown(f"<div class='metric-container'><div class='metric-value val-cal'>{int(totales_dia['cal'])}</div><div class='metric-label'>Kcal</div></div>", unsafe_allow_html=True)
     with c2: st.markdown(f"<div class='metric-container'><div class='metric-value val-pro'>{round(totales_dia['pro'],1)}g</div><div class='metric-label'>Prot</div></div>", unsafe_allow_html=True)
@@ -199,8 +216,6 @@ def mostrar():
                 st.error(f"⚠️ Ocurrió un error técnico: {error_ia}")
 
             if resultado_ia:
-                st.success("🎉 **Análisis completado con éxito:**")
-                
                 st.session_state['ia_nom'] = resultado_ia.get('nombre', '')
                 st.session_state['ia_porc'] = str(resultado_ia.get('porcion', '1 porción'))
                 st.session_state['ia_cal'] = int(resultado_ia.get('calorias', 0))
@@ -208,15 +223,35 @@ def mostrar():
                 st.session_state['ia_car'] = float(resultado_ia.get('carbohidratos', 0.0))
                 st.session_state['ia_gra'] = float(resultado_ia.get('grasas', 0.0))
                 
-                m1, m2 = st.columns(2)
-                m1.metric("Alimento / Plato", st.session_state['ia_nom'])
-                m2.metric("Porción Consumida", st.session_state['ia_porc'])
-                
-                k1, k2, k3, k4 = st.columns(4)
-                k1.metric("Calorías", f"{st.session_state['ia_cal']} kcal")
-                k2.metric("Proteína", f"{st.session_state['ia_pro']} g")
-                k3.metric("Carbs", f"{st.session_state['ia_car']} g")
-                k4.metric("Grasas", f"{st.session_state['ia_gra']} g")
+                # Tarjeta Estética Compacta (Ajuste para móviles)
+                st.markdown(f"""
+                <div style="background-color: #1a1a1a; border: 1px solid #2ecc71; border-radius: 10px; padding: 14px; margin-top: 10px; margin-bottom: 12px;">
+                    <div style="font-size: 1.05rem; font-weight: bold; color: #2ecc71; margin-bottom: 2px;">
+                        🎉 {st.session_state['ia_nom']}
+                    </div>
+                    <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">
+                        📍 <b>Porción:</b> {st.session_state['ia_porc']}
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; text-align: center;">
+                        <div style="background: #262626; padding: 6px; border-radius: 6px;">
+                            <div style="font-size: 0.65rem; color: #aaa; text-transform: uppercase;">Calorías</div>
+                            <div style="font-size: 0.95rem; font-weight: bold; color: #e74c3c;">{st.session_state['ia_cal']} kcal</div>
+                        </div>
+                        <div style="background: #262626; padding: 6px; border-radius: 6px;">
+                            <div style="font-size: 0.65rem; color: #aaa; text-transform: uppercase;">Proteína</div>
+                            <div style="font-size: 0.95rem; font-weight: bold; color: #3498db;">{st.session_state['ia_pro']} g</div>
+                        </div>
+                        <div style="background: #262626; padding: 6px; border-radius: 6px;">
+                            <div style="font-size: 0.65rem; color: #aaa; text-transform: uppercase;">Carbos</div>
+                            <div style="font-size: 0.95rem; font-weight: bold; color: #f1c40f;">{st.session_state['ia_car']} g</div>
+                        </div>
+                        <div style="background: #262626; padding: 6px; border-radius: 6px;">
+                            <div style="font-size: 0.65rem; color: #aaa; text-transform: uppercase;">Grasas</div>
+                            <div style="font-size: 0.95rem; font-weight: bold; color: #e67e22;">{st.session_state['ia_gra']} g</div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
                 
                 st.info("👉 Cambia a la pestaña **✍️ Manual** justo arriba para guardar este alimento en la base de datos.")
 
