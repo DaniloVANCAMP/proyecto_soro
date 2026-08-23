@@ -23,9 +23,15 @@ def mostrar_login():
                     
                     if user_id:
                         st.success("¡Acceso concedido! Entrando a tu perfil... 🏋️‍♂️")
+                        # 1. Guardar en memoria de sesión
                         st.session_state["logeado"] = True
                         st.session_state["user_id"] = user_id
                         st.session_state["username"] = username
+                        
+                        # 2. PERSISTENCIA: Guardar en la URL para sobrevivir al F5
+                        st.query_params["user_id"] = str(user_id)
+                        st.query_params["username"] = str(username)
+                        
                         time.sleep(1)
                         st.rerun()
                     else:

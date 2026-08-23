@@ -977,5 +977,129 @@
             "peso_levantado_kg": 0.0,
             "completado": true
         }
+    },
+    {
+        "id_evento": "c2c4644e-d95a-4f36-a71a-351be1e45be7",
+        "timestamp": "2026-08-22T21:56:15.112035",
+        "user_id": 2,
+        "usuario": {
+            "nombre": "Danilo Vanoy",
+            "sexo": "Masculino",
+            "edad": 29,
+            "estatura_cm": 177.0
+        },
+        "biometria_diaria": {
+            "peso_kg": 88.0,
+            "medidas_cm": {
+                "biceps": 35.0,
+                "abdomen": 85.0,
+                "cintura": 80.0,
+                "cadera": 95.0,
+                "gluteos": 100.0,
+                "cuadriceps": 55.0,
+                "pantorrilla": 38.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfe0 Casa",
+            "clima": "No registrado",
+            "temperatura_c": 25
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Hipertrofia"
+        },
+        "ejercicio": {
+            "id_api": "1760",
+            "nombre": "Dumbbell Goblet Squat",
+            "musculo_objetivo": "Cu\u00e1driceps",
+            "equipo_usado": "Mancuerna"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 0.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "b684b959-08e9-4f83-b494-6d09c0ea4901",
+        "timestamp": "2026-08-22T23:24:00.679858",
+        "user_id": "lGKEEhDIsA0peNxcd6yu",
+        "usuario": {
+            "nombre": "Danilo Vanoy",
+            "sexo": "Masculino",
+            "edad": 29,
+            "estatura_cm": 177
+        },
+        "biometria_diaria": {
+            "peso_kg": 88.0,
+            "medidas_cm": {
+                "cadera": 0.0,
+                "pierna": 0.0,
+                "cintura": 0.0,
+                "pecho": 0.0,
+                "pantorrilla": 0.0,
+                "brazo": 0.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfe0 Casa",
+            "clima": "Desconocido",
+            "temperatura_c": 25
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Planificaci\u00f3n Manual"
+        },
+        "ejercicio": {
+            "id_api": "0285",
+            "nombre": "Dumbbell Alternate Biceps Curl",
+            "musculo_objetivo": "B\u00edceps",
+            "equipo_usado": "Mancuerna"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 5.0,
+            "completado": true
+        }
+    },
+    {
+        "id_evento": "5e9c394f-38eb-4b27-8cbb-c3fd67de7bfa",
+        "timestamp": "2026-08-22T23:24:00.679858",
+        "user_id": "lGKEEhDIsA0peNxcd6yu",
+        "usuario": {
+            "nombre": "Danilo Vanoy",
+            "sexo": "Masculino",
+            "edad": 29,
+            "estatura_cm": 177
+        },
+        "biometria_diaria": {
+            "peso_kg": 88.0,
+            "medidas_cm": {
+                "cadera": 0.0,
+                "pierna": 0.0,
+                "cintura": 0.0,
+                "pecho": 0.0,
+                "pantorrilla": 0.0,
+                "brazo": 0.0
+            }
+        },
+        "contexto_ambiental": {
+            "lugar_entrenamiento": "\ud83c\udfe0 Casa",
+            "clima": "Desconocido",
+            "temperatura_c": 25
+        },
+        "metrica_sesion": {
+            "esfuerzo_rpe": 7,
+            "objetivo_entrenamiento": "Planificaci\u00f3n Manual"
+        },
+        "ejercicio": {
+            "id_api": "1646",
+            "nombre": "Dumbbell Alternate Hammer Preacher Curl",
+            "musculo_objetivo": "B\u00edceps",
+            "equipo_usado": "Mancuerna"
+        },
+        "ejecucion": {
+            "peso_levantado_kg": 5.0,
+            "completado": true
+        }
     }
 ]

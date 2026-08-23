@@ -44,6 +44,12 @@ def check_perfil():
     return None
 
 def main():
+    # 1. PERSISTENCIA DE SESIÓN: Recuperar datos de la URL al dar F5/Refrescar
+    if "user_id" in st.query_params and not st.session_state.get("logeado"):
+        st.session_state["user_id"] = st.query_params["user_id"]
+        st.session_state["username"] = st.query_params.get("username", "Usuario")
+        st.session_state["logeado"] = True
+
     if "logeado" not in st.session_state:
         st.session_state["logeado"] = False
 
@@ -91,8 +97,11 @@ def main():
             registro.mostrar()
 
         st.sidebar.divider()
+        
+        # 2. LIMPIEZA TOTAL: Borra session_state y los parámetros de la URL al salir
         if st.sidebar.button("🚪 Cerrar Sesión", use_container_width=True):
             st.session_state.clear()
+            st.query_params.clear()
             st.rerun()
 
 if __name__ == "__main__":

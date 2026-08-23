@@ -1,13 +1,12 @@
 import json
-import math
 import os
-import random
 import requests
-import uuid
 import time
 import streamlit as st
-from datetime import datetime, timedelta, date
 import database as db 
+
+# IMPORTAMOS NUESTROS TRES MÓDULOS NUEVOS
+from views import tab_2_1_planificador, tab_2_2_generador, tab_2_3_catalogo_gral
 
 URL_JSON = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/data/exercises.json"
 BASE_MEDIA_URL = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/"
@@ -173,28 +172,73 @@ def cargar_ejercicios_completos():
         return []
 
 # ==========================================
-# 3. INTERFAZ PRINCIPAL
+# 3. INTERFAZ PRINCIPAL (ROUTER)
 # ==========================================
 def mostrar(exercises_param=None, base_media_url_param=None):
-    # CSS GLAMUROSO INYECTADO AQUÍ
+    # CSS MAESTRO NUCLEAR V2 (Fuerza Bruta para los Tabs)
     st.markdown("""
     <style>
-    .glam-card {
-        background: linear-gradient(145deg, #1f1f1f 0%, #2a2a2a 100%);
-        border-left: 4px solid #ff4b4b;
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    /* Tarjetas de configuración */
+    .titulo-config { 
+        color: #ff4b4b; 
+        font-size: 1.5rem; 
+        font-weight: bold; 
+        margin-bottom: 10px; 
+        margin-top: 15px; 
     }
-    .glam-mini-btn {
-        background-color: #333; border: 1px solid #555; padding: 10px; 
-        border-radius: 8px; text-align: center; cursor: pointer; color: white;
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 12px;
+        border: 1px solid #333;
+        background-color: #1a1a1a;
+        padding: 10px;
+    }
+
+    /* TABS ESTILO BOTONES CUADRADOS (Usando role="tab" que no falla) */
+    div[data-testid="stTabs"] button[role="tab"] {
+        background-color: #2b2b2b !important;
+        border: 1px solid #444 !important;
+        border-radius: 8px !important;
+        padding: 8px 12px !important;
+        margin-right: 8px !important;
+        height: auto !important;
+    }
+    
+    /* Pestaña Activa */
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        background-color: #ff4b4b !important;
+        border: 1px solid #ff4b4b !important;
+    }
+    
+    /* Textos de las Pestañas */
+    div[data-testid="stTabs"] button[role="tab"] p {
+        color: #aaaaaa !important; 
+        font-size: 14px !important;
+        margin: 0 !important;
+    }
+    
+    /* Texto Pestaña Activa */
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] p {
+        color: #ffffff !important; 
+        font-weight: bold !important;
+    }
+    
+    /* Eliminar la raya inferior de Streamlit */
+    div[data-testid="stTabs"] div[data-baseweb="tab-highlight"],
+    div[data-testid="stTabs"] div[data-baseweb="tab-border"] {
+        display: none !important;
+        background-color: transparent !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("💪 Centro de Entrenamiento")
+    # TÍTULO SIMÉTRICO Y COMPACTO
+    st.markdown("""
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px;">
+        <span style="font-size: 2.2rem;">💪</span>
+        <h1 style="margin: 0; padding: 0; text-align: center; font-size: 2.2rem; line-height: 1.1;">Centro Entrenamiento</h1>
+        <span style="font-size: 2.2rem; display: inline-block; transform: scaleX(-1);">💪</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     if exercises_param and len(exercises_param) > 10:
         ejercicios = exercises_param
@@ -207,7 +251,7 @@ def mostrar(exercises_param=None, base_media_url_param=None):
 
     perfil_actual = cargar_perfil()
     with st.expander("🧬 Mi Perfil Biométrico (Actualiza tus medidas aquí)", expanded=False):
-        with st.form("form_biometria"):
+        with st.form("form_biometria_catalogo"):
             st.subheader("Datos Demográficos")
             col_d1, col_d2, col_d3 = st.columns(3)
             nombre = col_d1.text_input("Nombre", value=perfil_actual["nombre"])
@@ -244,358 +288,59 @@ def mostrar(exercises_param=None, base_media_url_param=None):
                 time.sleep(1.5)
                 st.rerun()
 
-    perfil_actual = cargar_perfil()
-    st.markdown("### 📍 Configuración de la Sesión")
-    col_perfil, col_dias, col_obj = st.columns([2, 1, 1], vertical_alignment="bottom")
+    # ==========================================
+    # SECCIÓN: CONFIGURACIÓN DE LA SESIÓN 
+    # ==========================================
+    st.markdown("<div class='titulo-config'>Configuración de la Sesión</div>", unsafe_allow_html=True)
+    
+    with st.container(border=True):
+        col_perfil, col_dias, col_obj = st.columns([2, 1, 1], vertical_alignment="bottom")
 
-    presets = cargar_presets()
-    opciones_perfil = list(presets.keys()) + ["➕ Crear nuevo lugar/perfil..."]
+        presets = cargar_presets()
+        opciones_perfil = list(presets.keys()) + ["➕ Crear nuevo lugar/perfil..."]
 
-    with col_perfil:
-        perfil_elegido = st.selectbox("Lugar de entrenamiento activo:", opciones_perfil)
-    with col_dias:
-        dias_entreno = st.slider("Días a entrenar por semana:", 1, 7, 4)
-    with col_obj:
-        objetivo = st.selectbox("Objetivo:", ["Hipertrofia", "Fuerza", "Resistencia", "Pérdida de Peso"])
+        with col_perfil:
+            perfil_elegido = st.selectbox("Lugar de entrenamiento activo:", opciones_perfil)
+        with col_dias:
+            dias_entreno = st.slider("Días a entrenar por semana:", 1, 7, 4)
+        with col_obj:
+            objetivo = st.selectbox("Objetivo:", ["Hipertrofia", "Fuerza", "Resistencia", "Pérdida de Peso"])
 
-    equipamientos_globales = sorted(list(set([ej.get("equipment_trad", "N/A") for ej in ejercicios if ej.get("equipment_trad")])))
-    equipos_seleccionados = []
+        equipamientos_globales = sorted(list(set([ej.get("equipment_trad", "N/A") for ej in ejercicios if ej.get("equipment_trad")])))
+        equipos_seleccionados = []
 
-    if perfil_elegido == "➕ Crear nuevo lugar/perfil...":
-        nuevo_nombre = st.text_input("Nombre del nuevo perfil:")
-        if st.button("Crear Perfil") and nuevo_nombre:
-            if nuevo_nombre not in presets:
-                presets[nuevo_nombre] = []
-                guardar_presets(presets)
-                st.rerun()
-    else:
-        maquinas_guardadas = [eq for eq in presets.get(perfil_elegido, []) if eq in equipamientos_globales]
-        col_equipo, col_btn_guardar = st.columns([5, 1], vertical_alignment="bottom")
-        with col_equipo:
-            equipos_seleccionados = st.multiselect(f"Equipamiento en {perfil_elegido}:", equipamientos_globales, default=maquinas_guardadas)
-        with col_btn_guardar:
-            if equipos_seleccionados != maquinas_guardadas:
-                if st.button("💾 Guardar Eq.", use_container_width=True):
-                    presets[perfil_elegido] = equipos_seleccionados
+        if perfil_elegido == "➕ Crear nuevo lugar/perfil...":
+            nuevo_nombre = st.text_input("Nombre del nuevo perfil:")
+            if st.button("Crear Perfil") and nuevo_nombre:
+                if nuevo_nombre not in presets:
+                    presets[nuevo_nombre] = []
                     guardar_presets(presets)
                     st.rerun()
+        else:
+            maquinas_guardadas = [eq for eq in presets.get(perfil_elegido, []) if eq in equipamientos_globales]
+            col_equipo, col_btn_guardar = st.columns([5, 1], vertical_alignment="bottom")
+            with col_equipo:
+                equipos_seleccionados = st.multiselect(f"Equipamiento en {perfil_elegido}:", equipamientos_globales, default=maquinas_guardadas)
+            with col_btn_guardar:
+                if equipos_seleccionados != maquinas_guardadas:
+                    if st.button("💾 Guardar Eq.", use_container_width=True):
+                        presets[perfil_elegido] = equipos_seleccionados
+                        guardar_presets(presets)
+                        st.rerun()
 
     st.divider()
+    
+    # ENRUTAMIENTO HACIA LOS 3 MÓDULOS HIJOS
     tab_planificador, tab_generador, tab_catalogo = st.tabs(["📅 Planificador Semanal", "⚡ Generador de Rutinas", "🔍 Catálogo de Consulta"])
 
-# --- PESTAÑA 1: PLANIFICADOR SEMANAL (GLAMUROSO, MÓVIL Y CON IMÁGENES) ---
     with tab_planificador:
-        # Inyección de CSS Premium sin dañar nada
-        st.markdown("""
-        <style>
-        .glam-card {
-            background: linear-gradient(145deg, #1e1e1e 0%, #2b2b2b 100%);
-            border-left: 4px solid #ff4b4b;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        /* Forzar que las columnas del calendario no colapsen en celular */
-        [data-testid="stHorizontalBlock"] { gap: 0.2rem; }
-        </style>
-        """, unsafe_allow_html=True)
+        tab_2_1_planificador.mostrar(ejercicios, equipos_seleccionados, perfil_elegido, BASE_MEDIA_URL, traducir_nombre_ejercicio)
 
-        st.header("📅 Planificador de Entrenamientos")
-        user_id = st.session_state.get("user_id")
-        
-        # Calendario tipo botones (Ideal para celular)
-        st.markdown("### 🗓️ Selecciona un día para ver/editar su rutina")
-        from datetime import timedelta, date
-        hoy = date.today()
-        lunes = hoy - timedelta(days=hoy.weekday())
-        dias_nombres = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
-        
-        # Usamos session_state para recordar qué botón se presionó
-        if "dia_activo" not in st.session_state:
-            st.session_state["dia_activo"] = hoy
-
-        cols_dias = st.columns(7)
-        for i, col in enumerate(cols_dias):
-            fecha_iter = lunes + timedelta(days=i)
-            # Consultamos rápido a la BD para poner un indicador visual
-            rutina_previa = db.obtener_plan_dia(user_id, fecha_iter.strftime("%Y-%m-%d")) if user_id else []
-            indicador = "🔥" if rutina_previa else "⚪"
-            
-            with col:
-                # Si el usuario hace clic, actualizamos la fecha activa
-                if st.button(f"{dias_nombres[i]}\n{indicador}", key=f"btn_dia_{i}", use_container_width=True):
-                    st.session_state["dia_activo"] = fecha_iter
-
-        fecha_seleccionada = st.session_state["dia_activo"]
-        fecha_str = fecha_seleccionada.strftime("%Y-%m-%d")
-        
-        # Manejo de la rutina temporal (Borrador) antes de guardar
-        if "rutina_borrador" not in st.session_state or st.session_state.get("fecha_borrador") != fecha_str:
-            st.session_state["rutina_borrador"] = db.obtener_plan_dia(user_id, fecha_str) if user_id else []
-            st.session_state["fecha_borrador"] = fecha_str
-
-        st.divider()
-
-        # --- SECCIÓN A: AGREGAR EJERCICIOS ---
-        ejercicios_plan = [ej for ej in ejercicios if ej.get("equipment_trad") in equipos_seleccionados] if equipos_seleccionados else []
-
-        with st.container(border=True):
-            st.subheader(f"Añadir ejercicio al {fecha_str}")
-            if not ejercicios_plan:
-                st.warning("⚠️ Selecciona al menos un equipo arriba.")
-            else:
-                todos_los_musculos = sorted(list(set([ej.get("target_trad") for ej in ejercicios_plan if ej.get("target_trad")])))
-                musculos_elegidos = st.multiselect("1️⃣ Selecciona Músculo(s):", todos_los_musculos)
-                
-                if musculos_elegidos:
-                    # Obtenemos los nombres de los ejercicios que YA están en el borrador para ocultarlos
-                    nombres_usados = [ej["nombre"] for ej in st.session_state["rutina_borrador"]]
-                    
-                    for musculo in musculos_elegidos:
-                        st.markdown(f"<h3 style='color: #FF4B4B;'>🎯 {musculo}</h3>", unsafe_allow_html=True)
-                        ej_musculo = [ej for ej in ejercicios_plan if ej.get("target_trad") == musculo]
-                        equipos_viables = sorted(list(set([ej.get("equipment_trad") for ej in ej_musculo if ej.get("equipment_trad")])))
-                        
-                        for equipo in equipos_viables:
-                            # Filtramos por equipo Y eliminamos los que ya seleccionaste
-                            ej_finales = [ej for ej in ej_musculo if ej.get("equipment_trad") == equipo and traducir_nombre_ejercicio(ej.get("name", "")) not in nombres_usados]
-                            
-                            if ej_finales:
-                                st.markdown(f"#### ⚙️ {equipo}")
-                                for ej_data in ej_finales:
-                                    nombre_ej = traducir_nombre_ejercicio(ej_data.get("name", ""))
-                                    
-                                    # Tarjeta Glamurosa ¡CON IMAGEN RESTAURADA!
-                                    st.markdown('<div class="glam-card">', unsafe_allow_html=True)
-                                    c_img, c_txt, c_btn = st.columns([1, 2.5, 1], vertical_alignment="center")
-                                    
-                                    with c_img:
-                                        if ej_data.get("gif_url_correcta"):
-                                            st.image(f"{BASE_MEDIA_URL}{ej_data.get('gif_url_correcta').lstrip('/')}", use_container_width=True)
-                                            
-                                    with c_txt:
-                                        st.markdown(f"**{nombre_ej}**")
-                                        # Opcional: mostrar instrucciones si existen
-                                        instrucciones = ej_data.get("instructions", [])
-                                        if isinstance(instrucciones, list) and instrucciones:
-                                            with st.expander("📖 Instrucciones"):
-                                                for paso in instrucciones[:2]: # Muestra solo los 2 primeros pasos para no alargar
-                                                    st.caption(f"- {paso}")
-                                                    
-                                    with c_btn:
-                                        if st.button("➕ Seleccionar", key=f"sel_{ej_data['id']}", use_container_width=True):
-                                            nuevo_item = {
-                                                "id_unico": str(uuid.uuid4()), "nombre": nombre_ej,
-                                                "musculo": musculo, "equipo": equipo, "series": 3, "reps": 10,
-                                                "gif_url": ej_data.get("gif_url_correcta", ""),
-                                                "instrucciones": ej_data.get("instructions", [])
-                                            }
-                                            st.session_state["rutina_borrador"].append(nuevo_item)
-                                            st.rerun()
-                                    st.markdown('</div>', unsafe_allow_html=True)
-
-        # --- SECCIÓN B: VER Y GUARDAR RUTINA ---
-        st.subheader(f"📋 Borrador de Rutina para el {fecha_str}")
-        if not st.session_state["rutina_borrador"]:
-            st.info("Aún no has seleccionado ejercicios para este día.")
-        else:
-            for idx, item in enumerate(st.session_state["rutina_borrador"]):
-                st.markdown('<div class="glam-card">', unsafe_allow_html=True)
-                # Restauramos la imagen en la vista del borrador también
-                c_img2, c1, c2, c3, c4 = st.columns([1, 2, 1, 1, 1], vertical_alignment="center")
-                
-                with c_img2:
-                    if item.get("gif_url"):
-                        st.image(f"{BASE_MEDIA_URL}{item['gif_url'].lstrip('/')}", use_container_width=True)
-                with c1:
-                    st.markdown(f"**{idx + 1}. {item['nombre']}**")
-                    st.caption(f"🎯 {item['musculo']} | ⚙️ {item['equipo']}")
-                with c2:
-                    item["series"] = st.number_input("Series", min_value=1, value=item["series"], key=f"s_{item['id_unico']}", label_visibility="collapsed")
-                with c3:
-                    item["reps"] = st.number_input("Reps", min_value=1, value=item["reps"], key=f"r_{item['id_unico']}", label_visibility="collapsed")
-                with c4:
-                    if st.button("❌", key=f"del_b_{item['id_unico']}", use_container_width=True):
-                        st.session_state["rutina_borrador"].pop(idx)
-                        st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-            # BOTÓN FINAL DE GUARDADO
-            if st.button("💾 GUARDAR RUTINA DEL DÍA", type="primary", use_container_width=True):
-                if user_id:
-                    db.guardar_plan_dia(user_id, fecha_str, st.session_state["rutina_borrador"])
-                    st.success(f"¡Rutina guardada exitosamente en la base de datos para el {fecha_str}!")
-                    time.sleep(1.5)
-                    st.rerun()
-                else:
-                    st.error("Debes iniciar sesión para guardar.")
-# --- PESTAÑA 2: GENERADOR ---
     with tab_generador:
-        col_gen1, col_gen2 = st.columns(2)
-        with col_gen1:
-            enfoque = st.selectbox("Enfoque muscular para hoy:", ["Cuerpo Completo", "Tren Superior", "Tren Inferior", "Personalizado"])
-        with col_gen2:
-            duracion = st.slider("Duración máxima (min):", 30, 120, 60, 15)
+        tab_2_2_generador.mostrar(ejercicios, equipos_seleccionados, perfil_actual, perfil_elegido, objetivo, BASE_MEDIA_URL, traducir_nombre_ejercicio, obtener_clima_api, guardar_en_bitacora)
 
-        musculos_personalizados = []
-        if enfoque == "Personalizado":
-            lista_todos_musculos = sorted(list(set([ej.get("target_trad") for ej in ejercicios if ej.get("target_trad")])))
-            musculos_personalizados = st.multiselect("Músculos:", lista_todos_musculos)
-
-        btn_deshabilitado = (enfoque == "Personalizado" and len(musculos_personalizados) == 0)
-
-        if st.button("⚡ Generar Rutina", type="primary", use_container_width=True, disabled=btn_deshabilitado):
-            candidatos_equipo = ejercicios
-            if equipos_seleccionados:
-                candidatos_equipo = [ej for ej in ejercicios if ej.get("equipment_trad") in equipos_seleccionados]
-
-            candidatos_finales = []
-            if enfoque == "Personalizado":
-                candidatos_finales = [ej for ej in candidatos_equipo if ej.get("target_trad") in musculos_personalizados]
-            elif enfoque == "Tren Superior":
-                targets_upper = ["Pecho", "Dorsales", "Bíceps", "Tríceps", "Deltoides", "Espalda", "Antebrazos"]
-                candidatos_finales = [ej for ej in candidatos_equipo if any(t in str(ej.get("target_trad")) for t in targets_upper)]
-            elif enfoque == "Tren Inferior":
-                targets_lower = ["Cuádriceps", "Glúteos", "Isquiotibiales", "Pantorrillas", "Aductores", "Abductores"]
-                candidatos_finales = [ej for ej in candidatos_equipo if any(t in str(ej.get("target_trad")) for t in targets_lower)]
-            else:
-                candidatos_finales = candidatos_equipo
-
-            if not candidatos_finales:
-                st.error("⚠️ No hay ejercicios compatibles. Prueba agregando más equipos arriba.")
-                st.session_state["rutina_generada"] = []
-            else:
-                num_ejercicios = max(3, min(duracion // 10, len(candidatos_finales)))
-                st.session_state["rutina_generada"] = random.sample(candidatos_finales, num_ejercicios)
-                st.session_state["candidatos_pool"] = candidatos_equipo
-
-        if "rutina_generada" in st.session_state and st.session_state["rutina_generada"]:
-            st.divider()
-            st.subheader("📝 Tu Rutina de Hoy")
-            rutina = st.session_state["rutina_generada"]
-
-            for idx, ej in enumerate(rutina):
-                with st.container(border=True):
-                    col_info, col_img, col_inputs, col_btn = st.columns([2.5, 1.5, 1.5, 1])
-                    with col_info:
-                        nombre_traducido = traducir_nombre_ejercicio(ej.get('name', ''))
-                        st.markdown(f"**{idx + 1}. {nombre_traducido}**")
-                        st.write(f"🎯 {ej.get('target_trad')} | ⚙️ {ej.get('equipment_trad')}")
-                    with col_img:
-                        if ej.get("gif_url_correcta"):
-                            st.image(f"{BASE_MEDIA_URL}{ej.get('gif_url_correcta').lstrip('/')}", use_container_width=True)
-                    with col_inputs:
-                        st.number_input("Peso (kg)", min_value=0.0, value=0.0, step=1.0, key=f"peso_{idx}")
-                        st.checkbox("¡Hecho!", key=f"check_{idx}")
-                    with col_btn:
-                        if st.button("🔄 Swap", key=f"swap_{idx}"):
-                            pool = st.session_state.get("candidatos_pool", ejercicios)
-                            alternativas = [c for c in pool if c.get("id") != ej.get("id")]
-                            if alternativas:
-                                st.session_state["rutina_generada"][idx] = random.choice(alternativas)
-                                st.rerun()
-
-            st.divider()
-            st.markdown("#### 🌤️ Contexto Ambiental y Esfuerzo (Features para ML)")
-            col_ciudad, col_btn_clima = st.columns([3, 1], vertical_alignment="bottom")
-            with col_ciudad:
-                ciudad_input = st.text_input("📍 Ciudad actual:", placeholder="Ej: Cali, Madrid...")
-            with col_btn_clima:
-                if st.button("🔍 Detectar Clima", use_container_width=True) and ciudad_input:
-                    with st.spinner("Buscando..."):
-                        desc, temp = obtener_clima_api(ciudad_input)
-                        st.session_state["clima_actual"] = desc
-                        st.session_state["temp_actual"] = temp
-
-            col_clima, col_temp, col_esfuerzo = st.columns(3)
-            with col_clima:
-                clima_actual = st.text_input("Clima", value=st.session_state.get("clima_actual", "Soleado"))
-            with col_temp:
-                temp_actual = st.number_input("Temp (°C)", value=st.session_state.get("temp_actual", 25))
-            with col_esfuerzo:
-                esfuerzo_rpe = st.slider("Esfuerzo Sesión (RPE 1-10)", 1, 10, 7)
-
-            if st.button("💾 GUARDAR MICRODATOS COMPLETOS EN BITÁCORA", type="primary", use_container_width=True):
-                datos_a_guardar = []
-                fecha_actual = datetime.now().isoformat()
-                for idx, ej in enumerate(rutina):
-                    if st.session_state.get(f"check_{idx}"):
-                        microdato = {
-                            "id_evento": str(uuid.uuid4()), "timestamp": fecha_actual,
-                            "user_id": st.session_state.get("user_id"),
-                            "usuario": {
-                                "nombre": perfil_actual["nombre"], "sexo": perfil_actual["sexo"],
-                                "edad": perfil_actual["edad"], "estatura_cm": perfil_actual["estatura_cm"]
-                            },
-                            "biometria_diaria": {
-                                "peso_kg": perfil_actual["peso_kg"],
-                                "medidas_cm": {
-                                    "biceps": perfil_actual["biceps"], "abdomen": perfil_actual["abdomen"],
-                                    "cintura": perfil_actual["cintura"], "cadera": perfil_actual["cadera"],
-                                    "gluteos": perfil_actual["gluteos"], "cuadriceps": perfil_actual["cuadriceps"],
-                                    "pantorrilla": perfil_actual["pantorrilla"]
-                                }
-                            },
-                            "contexto_ambiental": {
-                                "lugar_entrenamiento": perfil_elegido,
-                                "ciudad": ciudad_input if ciudad_input else "Desconocida",
-                                "clima": clima_actual, "temperatura_c": temp_actual
-                            },
-                            "metrica_sesion": {
-                                "esfuerzo_rpe": esfuerzo_rpe, "objetivo_entrenamiento": objetivo
-                            },
-                            "ejercicio": {
-                                "id_api": ej.get("id"), "nombre": traducir_nombre_ejercicio(ej.get("name", "")),
-                                "musculo_objetivo": ej.get("target_trad"), "zona_cuerpo": ej.get("body_part_trad"),
-                                "equipo_usado": ej.get("equipment_trad")
-                            },
-                            "ejecucion": {
-                                "peso_levantado_kg": st.session_state.get(f"peso_{idx}", 0.0),
-                                "completado": True
-                            }
-                        }
-                        datos_a_guardar.append(microdato)
-                
-                if datos_a_guardar:
-                    guardar_en_bitacora(datos_a_guardar)
-                    st.success("¡HECHO! Microdatos granulares exportados con éxito. 🧠🤖")
-                else:
-                    st.warning("No marcaste ningún ejercicio como completado.")
-
-# --- PESTAÑA 3: CATÁLOGO ---
     with tab_catalogo:
-        st.header("Catálogo de Consulta")
-        ej_filtrados = ejercicios
-        if equipos_seleccionados:
-            ej_filtrados = [ej for ej in ej_filtrados if ej.get("equipment_trad") in equipos_seleccionados]
-        
-        c1, c2 = st.columns(2)
-        zonas = ["Todos"] + sorted(list(set([e.get("body_part_trad") for e in ej_filtrados if e.get("body_part_trad")])))
-        zona_sel = c1.selectbox("Zona", zonas)
-        if zona_sel != "Todos":
-            ej_filtrados = [e for e in ej_filtrados if e.get("body_part_trad") == zona_sel]
-            
-        musculos = ["Todos"] + sorted(list(set([e.get("target_trad") for e in ej_filtrados if e.get("target_trad")])))
-        musculo_sel = c2.selectbox("Músculo", musculos)
-        if musculo_sel != "Todos":
-            ej_filtrados = [e for e in ej_filtrados if e.get("target_trad") == musculo_sel]
-            
-        if ej_filtrados:
-            st.write(f"Mostrando {len(ej_filtrados)} resultados.")
-            for ej in ej_filtrados[:15]:
-                with st.container(border=True):
-                    c_txt, c_img = st.columns([3, 1])
-                    with c_txt:
-                        nombre_cat = traducir_nombre_ejercicio(ej.get('name', ''))
-                        st.markdown(f"**{nombre_cat}**")
-                        st.write(f"🎯 Músculo: {ej.get('target_trad')}")
-                        st.write(f"⚙️ Equipo: {ej.get('equipment_trad')}")
-                    with c_img:
-                        if ej.get("gif_url_correcta"):
-                            st.image(f"{BASE_MEDIA_URL}{ej.get('gif_url_correcta').lstrip('/')}", width=100)
-        else:
-            st.warning("No hay resultados con la máquina o filtro que seleccionaste.")
+        tab_2_3_catalogo_gral.mostrar(ejercicios, equipos_seleccionados, BASE_MEDIA_URL, traducir_nombre_ejercicio)
 
 if __name__ == "__main__":
     mostrar()
