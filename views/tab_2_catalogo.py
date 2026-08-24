@@ -91,7 +91,6 @@ def guardar_presets(presets):
     with open(ARCHIVO_PRESETS, "w", encoding="utf-8") as archivo:
         json.dump(presets, archivo, indent=4)
 
-# Mantenemos esta función porque el Generador de Rutinas la usa internamente, pero borramos la visual.
 def cargar_perfil():
     user_id = st.session_state.get("user_id")
     default = {
@@ -163,10 +162,8 @@ def cargar_ejercicios_completos():
 # 3. INTERFAZ PRINCIPAL (ROUTER)
 # ==========================================
 def mostrar(exercises_param=None, base_media_url_param=None):
-    # CSS MAESTRO NUCLEAR V3: Transformando TABS en un GRID 2x2 Real
     st.markdown("""
     <style>
-    /* Titulos */
     .titulo-config { 
         color: #e74c3c; 
         font-size: 1.4rem; 
@@ -176,60 +173,15 @@ def mostrar(exercises_param=None, base_media_url_param=None):
         border-bottom: 2px solid #e74c3c;
         padding-bottom: 5px;
     }
-    
-    /* MAGIA GRID PARA LAS PESTAÑAS (TABS) */
-    /* Esto toma el contenedor original de las pestañas y lo obliga a ser una cuadrícula */
-    div[data-baseweb="tab-list"] {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 12px !important;
-        width: 100% !important;
-    }
-    
-    /* Estilo de cada pestaña para que parezca una tarjeta premium */
-    div[data-testid="stTabs"] button[role="tab"] {
-        background-color: #1a1c24 !important;
-        border: 1px solid #2d303e !important;
-        border-radius: 12px !important;
-        padding: 15px 10px !important;
-        margin: 0 !important;
-        width: 100% !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-    }
-    
-    /* Pestaña Activa (Seleccionada) */
-    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        background-color: #2b2b2b !important;
-        border: 1px solid #e74c3c !important;
-        border-bottom: 4px solid #e74c3c !important; /* Borde rojo imponente abajo */
-    }
-    
-    /* Textos de las Pestañas */
-    div[data-testid="stTabs"] button[role="tab"] p {
-        color: #aaaaaa !important; 
-        font-size: clamp(0.85rem, 3vw, 1.1rem) !important;
-        font-weight: 600 !important;
-        margin: 0 !important;
-        text-align: center !important;
-    }
-    
-    /* Texto Pestaña Activa */
-    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] p {
-        color: #ffffff !important; 
-        font-weight: 800 !important;
-    }
-    
-    /* Ocultar las rayas default feas de Streamlit */
-    div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] {
-        display: none !important;
-    }
+    div[data-baseweb="tab-list"] { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; width: 100% !important; }
+    div[data-testid="stTabs"] button[role="tab"] { background-color: #1a1c24 !important; border: 1px solid #2d303e !important; border-radius: 12px !important; padding: 15px 10px !important; margin: 0 !important; width: 100% !important; display: flex !important; justify-content: center !important; align-items: center !important; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] { background-color: #2b2b2b !important; border: 1px solid #e74c3c !important; border-bottom: 4px solid #e74c3c !important; }
+    div[data-testid="stTabs"] button[role="tab"] p { color: #aaaaaa !important; font-size: clamp(0.85rem, 3vw, 1.1rem) !important; font-weight: 600 !important; margin: 0 !important; text-align: center !important; }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] p { color: #ffffff !important; font-weight: 800 !important; }
+    div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
-    # TÍTULO PRINCIPAL
     st.markdown("""
     <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px;">
         <span style="font-size: 2.2rem;">💪</span>
@@ -244,29 +196,130 @@ def mostrar(exercises_param=None, base_media_url_param=None):
         ejercicios = cargar_ejercicios_completos()
 
     if not ejercicios:
-        st.error("No se pudieron cargar los ejercicios. Verifica tu conexión.")
+        st.error("No se pudieron cargar los ejercicios.")
         return
 
-    # Cargamos el perfil de forma invisible (sin la UI)
     perfil_actual = cargar_perfil()
 
     # ==========================================
-    # SECCIÓN: CONFIGURACIÓN DE LA SESIÓN 
+    # SECCIÓN: CONFIGURACIÓN (BLINDADA A PRUEBA DE F5)
     # ==========================================
     st.markdown("<div class='titulo-config'>⚙️ Configuración de la Sesión</div>", unsafe_allow_html=True)
     
+    presets = cargar_presets()
+    opciones_perfil = list(presets.keys()) + ["➕ Crear nuevo lugar/perfil..."]
+    opciones_obj = ["Hipertrofia", "Fuerza", "Resistencia", "Pérdida de Peso"]
+
+    if "config_lugar" not in st.session_state or st.session_state.config_lugar not in opciones_perfil:
+        url_lugar = st.query_params.get("lugar", opciones_perfil[0])
+        st.session_state.config_lugar = url_lugar if url_lugar in opciones_perfil else opciones_perfil[0]
+        
+    if "config_dias" not in st.session_state:
+        st.session_state.config_dias = int(st.query_params.get("dias", 4))
+        
+    if "config_objetivo" not in st.session_state:
+        url_obj = st.query_params.get("obj", "Hipertrofia")
+        st.session_state.config_objetivo = url_obj if url_obj in opciones_obj else opciones_obj[0]
+
+    def actualizar_memoria():
+        st.query_params["lugar"] = st.session_state.config_lugar
+        st.query_params["dias"] = str(st.session_state.config_dias)
+        st.query_params["obj"] = st.session_state.config_objetivo
+
     with st.container(border=True):
-        col_perfil, col_dias, col_obj = st.columns([2, 1, 1], vertical_alignment="bottom")
+        perfil_elegido = st.selectbox("Lugar de entrenamiento activo:", opciones_perfil, key="config_lugar", on_change=actualizar_memoria)
+        
+        # --- INICIO BOTONERA DE DÍAS ESTILO APP NATIVA ---
+        st.markdown("<p style='font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 5px; margin-top: 5px;'>Días a entrenar por semana:</p>", unsafe_allow_html=True)
+        
+        dias_entreno = st.radio(
+            "dias_entreno_radio", 
+            options=[1, 2, 3, 4, 5, 6, 7], 
+            horizontal=True, 
+            label_visibility="collapsed",
+            key="config_dias",
+            on_change=actualizar_memoria
+        )
 
-        presets = cargar_presets()
-        opciones_perfil = list(presets.keys()) + ["➕ Crear nuevo lugar/perfil..."]
+        dias = st.session_state.config_dias
+        
+        # CSS ULTRA ESPECÍFICO QUE ANIQUILA EL CÍRCULO Y EXPANDE AL 100%
+        css_botonera = """<style>
+        /* Estirar el radio group al 100% de la tarjeta */
+        section.main div[data-testid="stRadio"],
+        section.main div[data-testid="stRadio"] > div,
+        section.main div[data-testid="stRadio"] div[role="radiogroup"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 6px !important;
+            margin-bottom: 10px !important;
+        }
 
-        with col_perfil:
-            perfil_elegido = st.selectbox("Lugar de entrenamiento activo:", opciones_perfil)
-        with col_dias:
-            dias_entreno = st.slider("Días a entrenar por semana:", 1, 7, 4)
-        with col_obj:
-            objetivo = st.selectbox("Objetivo:", ["Hipertrofia", "Fuerza", "Resistencia", "Pérdida de Peso"])
+        /* Cada tarjeta se reparte por igual en el ancho (1/7 cada una) */
+        section.main div[data-testid="stRadio"] div[role="radiogroup"] > label {
+            flex: 1 1 0% !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            background-color: #1a1c24 !important; 
+            border: 1px solid #2d303e !important; 
+            border-radius: 8px !important;
+            padding: 12px 0px !important; 
+            margin: 0 !important; 
+            display: flex !important; 
+            justify-content: center !important; 
+            align-items: center !important;
+            text-align: center !important;
+            cursor: pointer !important; 
+            transition: all 0.3s ease !important;
+        }
+
+        /* ELIMINACIÓN NUCLEAR DE LOS CÍRCULOS DEL RADIO BUTTON */
+        section.main div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-of-type,
+        section.main div[data-testid="stRadio"] div[role="radiogroup"] label [data-baseweb="radio"],
+        section.main div[data-testid="stRadio"] div[role="radiogroup"] label input {
+            display: none !important;
+            width: 0px !important;
+            height: 0px !important;
+            opacity: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            pointer-events: none !important;
+        }
+
+        /* Centrar el número perfectamente */
+        section.main div[data-testid="stRadio"] div[role="radiogroup"] label p { 
+            color: #aaaaaa !important; 
+            font-weight: 800 !important; 
+            font-size: 1.1rem !important; 
+            margin: 0 !important;
+            padding: 0 !important;
+            text-align: center !important;
+            width: 100% !important;
+        }
+        """
+        
+        # Color degradado dinámico por cada opción activa
+        for i in range(1, dias + 1):
+            intensidad = 0.4 + (0.6 * (i / dias))
+            css_botonera += f"""
+            section.main div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child({i}) {{
+                background-color: rgba(231, 76, 60, {intensidad:.2f}) !important;
+                border-color: #e74c3c !important;
+                box-shadow: 0 0 6px rgba(231, 76, 60, {intensidad/2:.2f}) !important;
+            }}
+            section.main div[data-testid="stRadio"] div[role="radiogroup"] > label:nth-child({i}) p {{ 
+                color: #ffffff !important; 
+                font-weight: 900 !important;
+            }}
+            """
+            
+        css_botonera += "</style>"
+        st.markdown(css_botonera, unsafe_allow_html=True)
+        # --- FIN BOTONERA DE DÍAS ESTILO APP NATIVA ---
+        
+        objetivo = st.selectbox("Objetivo:", opciones_obj, key="config_objetivo", on_change=actualizar_memoria)
 
         equipamientos_globales = sorted(list(set([ej.get("equipment_trad", "N/A") for ej in ejercicios if ej.get("equipment_trad")])))
         equipos_seleccionados = []
@@ -277,22 +330,25 @@ def mostrar(exercises_param=None, base_media_url_param=None):
                 if nuevo_nombre not in presets:
                     presets[nuevo_nombre] = []
                     guardar_presets(presets)
+                    st.session_state.config_lugar = nuevo_nombre
+                    actualizar_memoria()
                     st.rerun()
         else:
             maquinas_guardadas = [eq for eq in presets.get(perfil_elegido, []) if eq in equipamientos_globales]
-            col_equipo, col_btn_guardar = st.columns([5, 1], vertical_alignment="bottom")
-            with col_equipo:
-                equipos_seleccionados = st.multiselect(f"Equipamiento en {perfil_elegido}:", equipamientos_globales, default=maquinas_guardadas)
-            with col_btn_guardar:
-                if equipos_seleccionados != maquinas_guardadas:
-                    if st.button("💾 Guardar Eq.", use_container_width=True):
-                        presets[perfil_elegido] = equipos_seleccionados
-                        guardar_presets(presets)
-                        st.rerun()
+            
+            equipos_seleccionados = st.multiselect(f"Equipamiento en {perfil_elegido}:", equipamientos_globales, default=maquinas_guardadas)
+            
+            if equipos_seleccionados != maquinas_guardadas:
+                if st.button("💾 Guardar Equipamiento", use_container_width=True):
+                    presets[perfil_elegido] = equipos_seleccionados
+                    guardar_presets(presets)
+                    st.rerun()
+
+        st.session_state["config_equipo_actual"] = ", ".join(equipos_seleccionados) if equipos_seleccionados else "Ninguno"
 
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # ENRUTAMIENTO HACIA LOS MÓDULOS HIJOS (El CSS arriba los convierte en una grilla 2x2)
+    # ENRUTAMIENTO HACIA LOS MÓDULOS HIJOS
     tab_planificador, tab_generador, tab_catalogo = st.tabs(["📅 Planificador", "⚡ Generador", "🔍 Catálogo"])
 
     with tab_planificador:

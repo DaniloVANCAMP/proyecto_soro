@@ -1,0 +1,292 @@
+digraph G {
+concentrate=true;
+splines="ortho";
+rankdir="LR";
+subgraph legend{
+    rank = min;
+    label = "legend";
+    Legend [shape=none, margin=0, label = <
+        <table cellspacing="0" cellpadding="0" border="1"><tr><td>Code2flow Legend</td></tr><tr><td>
+        <table cellspacing="0">
+        <tr><td>Regular function</td><td width="50px" bgcolor='#cccccc'></td></tr>
+        <tr><td>Trunk function (nothing calls this)</td><td bgcolor='#966F33'></td></tr>
+        <tr><td>Leaf function (this calls nothing else)</td><td bgcolor='#6db33f'></td></tr>
+        <tr><td>Function call</td><td><font color='black'>&#8594;</font></td></tr>
+        </table></td></tr></table>
+        >];
+}node_5a06b9c7 [label="0: (global)()" name="app::(global)" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_0754a031 [label="106: check_perfil()" name="app::check_perfil" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_25099693 [label="95: load_exercises()" name="app::load_exercises" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_5f838932 [label="113: main()" name="app::main" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_f1419956 [label="31: crear_usuario()" name="database::crear_usuario" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_6cd3e052 [label="151: guardar_alimento_personalizado()" name="database::guardar_alimento_personalizado" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_4e5dbabb [label="128: guardar_en_bitacora()" name="database::guardar_en_bitacora" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_105fcce6 [label="74: guardar_perfil()" name="database::guardar_perfil" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_165eefb0 [label="97: guardar_plan_dia()" name="database::guardar_plan_dia" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_1907c445 [label="20: hash_password()" name="database::hash_password" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_c05fc9d3 [label="164: obtener_alimentos_comunitarios()" name="database::obtener_alimentos_comunitarios" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_5b38f561 [label="139: obtener_bitacora()" name="database::obtener_bitacora" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_8ae1f7bd [label="84: obtener_perfil()" name="database::obtener_perfil" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_3d07eeb4 [label="112: obtener_plan_dia()" name="database::obtener_plan_dia" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_9f6019ba [label="52: verificar_usuario()" name="database::verificar_usuario" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_dee115c2 [label="49: guardar_usuario()" name="firebase_auth::guardar_usuario" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_870e566a [label="7: inicializar_firebase()" name="firebase_auth::inicializar_firebase" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_14158867 [label="20: login_con_correo()" name="firebase_auth::login_con_correo" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_bf9c95bb [label="34: registrar_usuario()" name="firebase_auth::registrar_usuario" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_bf9e2c7b [label="20: guardar_usuario_db()" name="firestore_db::guardar_usuario_db" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_b84eb80d [label="6: init_firestore()" name="firestore_db::init_firestore" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_45feb57b [label="27: obtener_usuario_db()" name="firestore_db::obtener_usuario_db" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_77374204 [label="5: mostrar_login()" name="login::mostrar_login" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_b05bd2c5 [label="6: __init__()" name="pdf_generator::PDF.__init__" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_6f6fa2ca [label="32: generar_pdf()" name="pdf_generator::generar_pdf" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_d3e0bfa3 [label="5: mostrar()" name="registro::mostrar" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_14c59083 [label="137: cambiar_ejercicio_individual()" name="routine_generator::cambiar_ejercicio_individual" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_aa8183a0 [label="156: generar_rutina_personalizada()" name="routine_generator::generar_rutina_personalizada" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_9ec72a55 [label="71: obtener_dosificacion_nsca()" name="routine_generator::obtener_dosificacion_nsca" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_d2feeff8 [label="77: obtener_ejercicios_candidatos()" name="routine_generator::obtener_ejercicios_candidatos" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_533a4a9a [label="68: obtener_nombre_equipo_es()" name="routine_generator::obtener_nombre_equipo_es" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_6aaf3190 [label="65: traducir_equipo()" name="routine_generator::traducir_equipo" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_1e4d020c [label="5: mostrar()" name="tab_1_1_datos::mostrar" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_f9194b81 [label="8: mostrar()" name="tab_1_2_estadisticas::mostrar" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_b98d025e [label="31: mostrar()" name="tab_1_perfil::mostrar" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_99c20836 [label="16: obtener_clima_cali()" name="tab_1_perfil::obtener_clima_cali" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_6cfa4354 [label="10: extraer_instrucciones()" name="tab_2_1_planificador::extraer_instrucciones" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_1f7bbed0 [label="49: mostrar()" name="tab_2_1_planificador::mostrar" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_b62c47a8 [label="34: obtener_plan_con_recurrencia()" name="tab_2_1_planificador::obtener_plan_con_recurrencia" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_918de565 [label="7: extraer_instrucciones()" name="tab_2_2_generador::extraer_instrucciones" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_303fd44a [label="26: mostrar()" name="tab_2_2_generador::mostrar" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_c7d55e0e [label="4: extraer_instrucciones()" name="tab_2_3_catalogo_gral::extraer_instrucciones" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_425d8e44 [label="23: mostrar()" name="tab_2_3_catalogo_gral::mostrar" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_5f869ea6 [label="147: cargar_ejercicios_completos()" name="tab_2_catalogo::cargar_ejercicios_completos" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_d8fbba4e [label="94: cargar_perfil()" name="tab_2_catalogo::cargar_perfil" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_e0bd553d [label="84: cargar_presets()" name="tab_2_catalogo::cargar_presets" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_93fa1d61 [label="58: fmt_equipo()" name="tab_2_catalogo::fmt_equipo" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_81aa2f4d [label="63: fmt_musculo()" name="tab_2_catalogo::fmt_musculo" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_cce0d935 [label="53: fmt_zona()" name="tab_2_catalogo::fmt_zona" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_cb95c56a [label="90: guardar_presets()" name="tab_2_catalogo::guardar_presets" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_79c2fe3e [label="164: mostrar()" name="tab_2_catalogo::mostrar" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_3507293d [label="132: obtener_clima_api()" name="tab_2_catalogo::obtener_clima_api" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_8e39ba75 [label="72: traducir_nombre_ejercicio()" name="tab_2_catalogo::traducir_nombre_ejercicio" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_a6218568 [label="31: cargar_perfil_completo()" name="tab_3_generador::cargar_perfil_completo" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_2ad99671 [label="17: guardar_en_bitacora()" name="tab_3_generador::guardar_en_bitacora" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_fca5b2cb [label="41: mostrar()" name="tab_3_generador::mostrar" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_fedd0fa9 [label="31: crear_usuario()" name="tab_4_bitacora::crear_usuario" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_b5598c51 [label="128: guardar_nutricion()" name="tab_4_bitacora::guardar_nutricion" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_8f10f860 [label="20: hash_password()" name="tab_4_bitacora::hash_password" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_199c570e [label="139: obtener_nutricion()" name="tab_4_bitacora::obtener_nutricion" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_88c32d99 [label="52: verificar_usuario()" name="tab_4_bitacora::verificar_usuario" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_264f5815 [label="13: analizar_alimento_ia()" name="tab_5_nutricion::analizar_alimento_ia" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_f53f1e1d [label="99: calcular_totales_dia()" name="tab_5_nutricion::calcular_totales_dia" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_c1f3f06f [label="85: cargar_alimentos_base()" name="tab_5_nutricion::cargar_alimentos_base" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_89280472 [label="109: inicializar_carrito()" name="tab_5_nutricion::inicializar_carrito" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_611229d1 [label="115: mostrar()" name="tab_5_nutricion::mostrar" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_4198f69c [label="94: obtener_catalogo_completo()" name="tab_5_nutricion::obtener_catalogo_completo" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_5a06b9c7 -> node_5f838932 [color="#CC79A7" penwidth="2"];
+node_0754a031 -> node_8ae1f7bd [color="#E69F00" penwidth="2"];
+node_5f838932 -> node_0754a031 [color="#56B4E9" penwidth="2"];
+node_5f838932 -> node_25099693 [color="#56B4E9" penwidth="2"];
+node_f1419956 -> node_1907c445 [color="#D55E00" penwidth="2"];
+node_9f6019ba -> node_1907c445 [color="#56B4E9" penwidth="2"];
+node_14158867 -> node_dee115c2 [color="#CC79A7" penwidth="2"];
+node_14158867 -> node_870e566a [color="#CC79A7" penwidth="2"];
+node_bf9c95bb -> node_870e566a [color="#009E73" penwidth="2"];
+node_bf9e2c7b -> node_b84eb80d [color="#009E73" penwidth="2"];
+node_45feb57b -> node_b84eb80d [color="#009E73" penwidth="2"];
+node_77374204 -> node_f1419956 [color="#F0E442" penwidth="2"];
+node_77374204 -> node_9f6019ba [color="#F0E442" penwidth="2"];
+node_b05bd2c5 -> node_b05bd2c5 [color="#0072B2" penwidth="2"];
+node_6f6fa2ca -> node_b05bd2c5 [color="#56B4E9" penwidth="2"];
+node_d3e0bfa3 -> node_105fcce6 [color="#009E73" penwidth="2"];
+node_d3e0bfa3 -> node_8ae1f7bd [color="#009E73" penwidth="2"];
+node_14c59083 -> node_d2feeff8 [color="#009E73" penwidth="2"];
+node_aa8183a0 -> node_9ec72a55 [color="#000000" penwidth="2"];
+node_aa8183a0 -> node_d2feeff8 [color="#000000" penwidth="2"];
+node_aa8183a0 -> node_d2feeff8 [color="#000000" penwidth="2"];
+node_533a4a9a -> node_6aaf3190 [color="#56B4E9" penwidth="2"];
+node_1e4d020c -> node_105fcce6 [color="#F0E442" penwidth="2"];
+node_f9194b81 -> node_5b38f561 [color="#E69F00" penwidth="2"];
+node_b98d025e -> node_8ae1f7bd [color="#D55E00" penwidth="2"];
+node_b98d025e -> node_99c20836 [color="#D55E00" penwidth="2"];
+node_b98d025e -> node_199c570e [color="#D55E00" penwidth="2"];
+node_1f7bbed0 -> node_4e5dbabb [color="#000000" penwidth="2"];
+node_1f7bbed0 -> node_165eefb0 [color="#000000" penwidth="2"];
+node_1f7bbed0 -> node_165eefb0 [color="#000000" penwidth="2"];
+node_1f7bbed0 -> node_8ae1f7bd [color="#000000" penwidth="2"];
+node_1f7bbed0 -> node_6cfa4354 [color="#000000" penwidth="2"];
+node_1f7bbed0 -> node_6cfa4354 [color="#000000" penwidth="2"];
+node_1f7bbed0 -> node_b62c47a8 [color="#000000" penwidth="2"];
+node_1f7bbed0 -> node_b62c47a8 [color="#000000" penwidth="2"];
+node_1f7bbed0 -> node_8e39ba75 [color="#000000" penwidth="2"];
+node_1f7bbed0 -> node_8e39ba75 [color="#000000" penwidth="2"];
+node_b62c47a8 -> node_3d07eeb4 [color="#000000" penwidth="2"];
+node_b62c47a8 -> node_3d07eeb4 [color="#000000" penwidth="2"];
+node_303fd44a -> node_918de565 [color="#56B4E9" penwidth="2"];
+node_303fd44a -> node_8e39ba75 [color="#56B4E9" penwidth="2"];
+node_303fd44a -> node_8e39ba75 [color="#56B4E9" penwidth="2"];
+node_425d8e44 -> node_c7d55e0e [color="#F0E442" penwidth="2"];
+node_425d8e44 -> node_8e39ba75 [color="#F0E442" penwidth="2"];
+node_5f869ea6 -> node_93fa1d61 [color="#D55E00" penwidth="2"];
+node_5f869ea6 -> node_81aa2f4d [color="#D55E00" penwidth="2"];
+node_5f869ea6 -> node_cce0d935 [color="#D55E00" penwidth="2"];
+node_d8fbba4e -> node_8ae1f7bd [color="#D55E00" penwidth="2"];
+node_79c2fe3e -> node_5f869ea6 [color="#D55E00" penwidth="2"];
+node_79c2fe3e -> node_d8fbba4e [color="#D55E00" penwidth="2"];
+node_79c2fe3e -> node_e0bd553d [color="#D55E00" penwidth="2"];
+node_79c2fe3e -> node_cb95c56a [color="#D55E00" penwidth="2"];
+node_79c2fe3e -> node_cb95c56a [color="#D55E00" penwidth="2"];
+node_3507293d -> node_8e39ba75 [color="#0072B2" penwidth="2"];
+node_a6218568 -> node_8ae1f7bd [color="#000000" penwidth="2"];
+node_fca5b2cb -> node_aa8183a0 [color="#009E73" penwidth="2"];
+node_fca5b2cb -> node_a6218568 [color="#009E73" penwidth="2"];
+node_fca5b2cb -> node_2ad99671 [color="#009E73" penwidth="2"];
+node_fedd0fa9 -> node_8f10f860 [color="#E69F00" penwidth="2"];
+node_88c32d99 -> node_8f10f860 [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_6cd3e052 [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_4e5dbabb [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_b5598c51 [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_b5598c51 [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_199c570e [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_264f5815 [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_264f5815 [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_264f5815 [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_f53f1e1d [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_f53f1e1d [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_f53f1e1d [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_89280472 [color="#E69F00" penwidth="2"];
+node_611229d1 -> node_4198f69c [color="#E69F00" penwidth="2"];
+node_4198f69c -> node_c05fc9d3 [color="#F0E442" penwidth="2"];
+node_4198f69c -> node_c1f3f06f [color="#F0E442" penwidth="2"];
+subgraph cluster_d2ecec8a {
+    node_25099693 node_0754a031 node_5f838932 node_5a06b9c7;
+    label="File: app";
+    name="app";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_a3d71cba {
+    node_1907c445 node_f1419956 node_9f6019ba node_105fcce6 node_8ae1f7bd node_165eefb0 node_3d07eeb4 node_4e5dbabb node_5b38f561 node_6cd3e052 node_c05fc9d3;
+    label="File: database";
+    name="database";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_d36697c8 {
+    node_870e566a node_14158867 node_bf9c95bb node_dee115c2;
+    label="File: firebase_auth";
+    name="firebase_auth";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_1cbeb7f2 {
+    node_b84eb80d node_bf9e2c7b node_45feb57b;
+    label="File: firestore_db";
+    name="firestore_db";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_b7fa6068 {
+    node_77374204;
+    label="File: login";
+    name="login";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_0e06d168 {
+    node_6f6fa2ca;
+    label="File: pdf_generator";
+    name="pdf_generator";
+    style="filled";
+    graph[style=dotted];
+    subgraph cluster_7957db84 {
+        node_b05bd2c5;
+        label="Class: PDF";
+        name="PDF";
+        style="filled";
+        graph[style=dotted];
+    };
+};
+subgraph cluster_fc73b29b {
+    node_d3e0bfa3;
+    label="File: registro";
+    name="registro";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_f1e6e699 {
+    node_6aaf3190 node_533a4a9a node_9ec72a55 node_d2feeff8 node_14c59083 node_aa8183a0;
+    label="File: routine_generator";
+    name="routine_generator";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_a5de62b1 {
+    node_1e4d020c;
+    label="File: tab_1_1_datos";
+    name="tab_1_1_datos";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_765e79d2 {
+    node_f9194b81;
+    label="File: tab_1_2_estadisticas";
+    name="tab_1_2_estadisticas";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_2678f0a2 {
+    node_99c20836 node_b98d025e;
+    label="File: tab_1_perfil";
+    name="tab_1_perfil";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_7b1092f4 {
+    node_6cfa4354 node_b62c47a8 node_1f7bbed0;
+    label="File: tab_2_1_planificador";
+    name="tab_2_1_planificador";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_52f89c95 {
+    node_918de565 node_303fd44a;
+    label="File: tab_2_2_generador";
+    name="tab_2_2_generador";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_4efe5604 {
+    node_c7d55e0e node_425d8e44;
+    label="File: tab_2_3_catalogo_gral";
+    name="tab_2_3_catalogo_gral";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_b87650fc {
+    node_cce0d935 node_93fa1d61 node_81aa2f4d node_8e39ba75 node_e0bd553d node_cb95c56a node_d8fbba4e node_3507293d node_5f869ea6 node_79c2fe3e;
+    label="File: tab_2_catalogo";
+    name="tab_2_catalogo";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_d96ad9ae {
+    node_2ad99671 node_a6218568 node_fca5b2cb;
+    label="File: tab_3_generador";
+    name="tab_3_generador";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_8c1941b1 {
+    node_8f10f860 node_fedd0fa9 node_88c32d99 node_b5598c51 node_199c570e;
+    label="File: tab_4_bitacora";
+    name="tab_4_bitacora";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_f369d79c {
+    node_264f5815 node_c1f3f06f node_4198f69c node_f53f1e1d node_89280472 node_611229d1;
+    label="File: tab_5_nutricion";
+    name="tab_5_nutricion";
+    style="filled";
+    graph[style=dotted];
+};
+}

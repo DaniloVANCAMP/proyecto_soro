@@ -131,7 +131,7 @@ def guardar_nutricion(user_id, fecha_str, datos):
         doc_id = f"{user_id}_{fecha_str}"
         doc_ref = db.collection("nutricion").document(doc_id)
         doc_ref.set(datos, merge=True)
-        st.cache_data.clear()  # <-- Limpia el caché
+        st.cache_data.clear()
     except Exception as e:
         print(f"Error al guardar nutricion: {e}")
 
@@ -153,6 +153,7 @@ def guardar_en_bitacora(lista_microdatos):
             doc_id = item.get("id_evento")
             if doc_id:
                 db.collection("bitacora").document(str(doc_id)).set(item)
+        st.cache_data.clear()  # <-- Invalida la caché para ver el entrenamiento de inmediato
     except Exception as e:
         print(f"Error al guardar en bitacora: {e}")
 
