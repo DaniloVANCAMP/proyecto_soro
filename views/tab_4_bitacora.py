@@ -34,8 +34,43 @@ def extraer_macro(datos_comida, llave):
     return 0
 
 def mostrar():
-    st.title("📅 Mi Bitácora de Entrenamiento y Nutrición")
-    st.write("Consulta tus microdatos cruzados (Ejercicio + Alimentación) para Machine Learning.")
+    # --- CSS ESTILIZADO Y RESPONSIVO PARA MÓVIL ---
+    st.markdown("""
+    <style>
+    .bitacora-title {
+        font-size: clamp(1.8rem, 6vw, 2.4rem);
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 2px;
+        line-height: 1.1;
+    }
+    .bitacora-subtitle {
+        font-size: clamp(1.0rem, 3.5vw, 1.3rem);
+        font-weight: 600;
+        color: #2ecc71;
+        margin-bottom: 6px;
+    }
+    .bitacora-desc {
+        font-size: 0.85rem;
+        color: #aaaaaa;
+        margin-bottom: 20px;
+    }
+    .section-title {
+        font-size: clamp(1.1rem, 4vw, 1.4rem);
+        font-weight: 700;
+        color: #ffffff;
+        margin-top: 15px;
+        margin-bottom: 12px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # --- ENCABEZADO REORGANIZADO ---
+    st.markdown("""
+    <div class='bitacora-title'>📅 Mi Bitácora</div>
+    <div class='bitacora-subtitle'>Entrenamiento y Nutrición</div>
+    <div class='bitacora-desc'>Consulta tus microdatos cruzados (Ejercicio + Alimentación) para Machine Learning.</div>
+    """, unsafe_allow_html=True)
 
     user_id_actual = st.session_state.get("user_id")
     perfil = cargar_perfil()
@@ -51,7 +86,7 @@ def mostrar():
     with col2:
         fecha_ref = st.date_input("Selecciona una fecha de referencia:", date.today())
 
-    st.subheader(f"Entrenamientos: {tipo_vista}")
+    st.markdown(f"<div class='section-title'>🏋️‍♂️ Entrenamientos: {tipo_vista}</div>", unsafe_allow_html=True)
 
     # --- LÓGICA DE FILTRADO ---
     todos_los_datos = cargar_bitacora_microdatos()
@@ -86,17 +121,19 @@ def mostrar():
         else:
             filas_resumen = []
             for d in datos_filtrados:
+                ej_resumen = d.get("ejercicio") or {}
+                ejec_resumen = d.get("ejecucion") or {}
                 filas_resumen.append({
                     "Fecha": d.get("timestamp", "")[:10],
-                    "Ejercicio": d.get("ejercicio", {}).get("nombre", "Desconocido").title(),
-                    "Músculo": d.get("ejercicio", {}).get("musculo_objetivo", "N/A"),
-                    "Peso (kg)": d.get("ejecucion", {}).get("peso_levantado_kg", 0.0)
+                    "Ejercicio": ej_resumen.get("nombre", "Desconocido").title(),
+                    "Músculo": ej_resumen.get("musculo_objetivo", "N/A"),
+                    "Peso (kg)": ejec_resumen.get("peso_levantado_kg", 0.0)
                 })
             st.dataframe(pd.DataFrame(filas_resumen), use_container_width=True)
 
     with tab_detalle:
-        st.markdown("### 🧬 Dataset Consolidado para Machine Learning")
-        st.markdown("Esta tabla unifica variables biométricas, ambientales, rendimiento **y nutrición detallada**.")
+        st.markdown("<div class='section-title'>🧬 Dataset Consolidado para Machine Learning</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 0.82rem; color: #aaaaaa; margin-bottom: 12px;'>Esta tabla unifica variables biométricas, ambientales, rendimiento y nutrición detallada.</div>", unsafe_allow_html=True)
         
         if not datos_filtrados:
             st.warning("No hay datos para construir el dataset en este periodo.")
@@ -105,42 +142,47 @@ def mostrar():
             for d in datos_filtrados:
                 fecha_str = d.get("timestamp", "")[:10]
                 
-                # --- MAGIA: EL JOIN CON NUTRICIÓN ---
+                # --- EXTRACCIÓN ROBUSTA DE FIREBASE ---
                 nutricion_hoy = db.obtener_nutricion(user_id_actual, fecha_str) or {}
-                totales_nut = nutricion_hoy.get("totales", {})
-                desayuno = nutricion_hoy.get("desayuno", {})
-                almuerzo = nutricion_hoy.get("almuerzo", {})
-                cena = nutricion_hoy.get("cena", {})
-                snacks = nutricion_hoy.get("snacks", {})
+                totales_nut = nutricion_hoy.get("totales") or {}
+                desayuno = nutricion_hoy.get("desayuno") or {}
+                almuerzo = nutricion_hoy.get("almuerzo") or {}
+                cena = nutricion_hoy.get("cena") or {}
+                snacks = nutricion_hoy.get("snacks") or {}
                 
-                ctx = d.get("contexto_ambiental", {})
-                met = d.get("metrica_sesion", {})
-                ej = d.get("ejercicio", {})
-                ejec = d.get("ejecucion", {})
-                bio = d.get("biometria_diaria", {}).get("medidas_cm", {})
+                ctx = d.get("contexto_ambiental") or {}
+                met = d.get("metrica_sesion") or {}
+                ej = d.get("ejercicio") or {}
+                ejec = d.get("ejecucion") or {}
+                bio = (d.get("biometria_diaria") or {}).get("medidas_cm") or {}
                 
                 fila = {
                     # 1. Variables Temporales y Ambientales
-                    "Timestamp": d.get("timestamp", ""),
-                    "Lugar": ctx.get("lugar_entrenamiento", "N/A"),
-                    "Temperatura (°C)": ctx.get("temperatura_c", 25.0),
+                    "Timestamp": d.get("timestamp") or "Sin Fecha",
+                    "Lugar": ctx.get("lugar_entrenamiento") or "No Registrado",
+                    "Temperatura (°C)": ctx.get("temperatura_c") or 25.0,
                     
-                    # 2. Biometría
-                    "Peso Corporal (kg)": d.get("biometria_diaria", {}).get("peso_kg", perfil.get("peso", 0.0)),
-                    "Cintura (cm)": bio.get("cintura", medidas.get("cintura", 0.0)),
+                    # 2. BIOMETRÍA COMPLETA (Crucial para ML)
+                    "Peso Corporal (kg)": (d.get("biometria_diaria") or {}).get("peso_kg") or perfil.get("peso", 0.0),
+                    "Cuello (cm)": bio.get("cuello") or medidas.get("cuello", 0.0),
+                    "Cintura (cm)": bio.get("cintura") or medidas.get("cintura", 0.0),
+                    "Cadera (cm)": bio.get("cadera") or medidas.get("cadera", 0.0),
+                    "Brazos (cm)": bio.get("biceps") or bio.get("brazo") or medidas.get("brazo", 0.0),
+                    "Piernas (cm)": bio.get("cuadriceps") or bio.get("pierna") or medidas.get("pierna", 0.0),
+                    "Pantorrillas (cm)": bio.get("pantorrilla") or medidas.get("pantorrilla", 0.0),
                     
                     # 3. Datos de Entrenamiento
-                    "Ejercicio": ej.get("nombre", "N/A"),
-                    "Músculo": ej.get("musculo_objetivo", "N/A"),
-                    "Peso Levantado (kg)": ejec.get("peso_levantado_kg", 0.0),
-                    "Esfuerzo (RPE)": met.get("esfuerzo_rpe", 0),
+                    "Ejercicio": ej.get("nombre") or "Sin Especificar",
+                    "Músculo": ej.get("musculo_objetivo") or "Sin Especificar",
+                    "Peso Levantado (kg)": ejec.get("peso_levantado_kg") or 0.0,
+                    "Esfuerzo (RPE)": met.get("esfuerzo_rpe") or 0,
                     
                     # 4. NUTRICIÓN: AGREGADA
-                    "Nut_Total_Calorias": totales_nut.get("cal", 0),
-                    "Nut_Total_Proteina(g)": totales_nut.get("proteina", 0),
-                    "Nut_Total_Carbos(g)": totales_nut.get("carbos", 0),
+                    "Nut_Total_Calorias": totales_nut.get("cal") or 0,
+                    "Nut_Total_Proteina(g)": totales_nut.get("proteina") or 0,
+                    "Nut_Total_Carbos(g)": totales_nut.get("carbos") or 0,
                     
-                    # 5. NUTRICIÓN: DESAGREGADA (El oro para ML)
+                    # 5. NUTRICIÓN: DESAGREGADA
                     "Desayuno_Calorias": extraer_macro(desayuno, "cal"),
                     "Desayuno_Proteina(g)": extraer_macro(desayuno, "proteina"),
                     "Desayuno_Carbos(g)": extraer_macro(desayuno, "carbos"),
