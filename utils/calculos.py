@@ -1,40 +1,37 @@
+import math
 import numpy as np
 
+# =========================================================================
+# 1. UTILIDADES GENERALES
+# =========================================================================
 def f_cop(x):
     """Formato visual de moneda ($ 1.000.000)"""
     return f"$ {int(x):,}".replace(",", ".")
 
+# =========================================================================
+# 2. MÓDULO: NUTRICIÓN Y METABOLISMO
+# =========================================================================
 def calcular_metabolismo(peso, estatura, edad, sexo, nivel_actividad="moderado", objetivo="Mantenimiento"):
     """
     Calcula Tasa Metabólica Basal (BMR) con Mifflin-St Jeor
     y distribuye Macronutrientes (Proteínas, Carbohidratos, Grasas).
     """
-    # 1. BMR (Mifflin-St Jeor)
     s = 5 if str(sexo).lower() == "hombre" else -161
     bmr = (10 * peso) + (6.25 * estatura) - (5 * edad) + s
     
-    # 2. Factores de Actividad
     factores = {
-        "sedentario": 1.2,      # Poco o ningún ejercicio
-        "ligero": 1.375,        # 1-3 días a la semana
-        "moderado": 1.55,       # 3-5 días a la semana
-        "fuerte": 1.725,        # 6-7 días a la semana
-        "atleta": 1.9           # Entrenamientos dobles / trabajo físico
+        "sedentario": 1.2, "ligero": 1.375, "moderado": 1.55,
+        "fuerte": 1.725, "atleta": 1.9 
     }
     key_act = str(nivel_actividad).lower()
     factor = factores.get(key_act, 1.55)
     tdee = bmr * factor
     
-    # 3. Ajuste por Objetivo
     obj_str = str(objetivo)
-    if "Perder" in obj_str or "Déficit" in obj_str:
-        target_cal = tdee - 500  # Déficit de 500 kcal
-    elif "Ganar" in obj_str or "Superávit" in obj_str:
-        target_cal = tdee + 300  # Superávit de 300 kcal
-    else:
-        target_cal = tdee        # Mantenimiento
+    if "Perder" in obj_str or "Déficit" in obj_str: target_cal = tdee - 500 
+    elif "Ganar" in obj_str or "Superávit" in obj_str: target_cal = tdee + 300 
+    else: target_cal = tdee 
         
-    # 4. Distribución de Macros
     factor_prot = 2.2 if ("Ganar" in obj_str or "Superávit" in obj_str) else 2.0
     proteina_g = peso * factor_prot
     proteina_kcal = proteina_g * 4
@@ -46,29 +43,44 @@ def calcular_metabolismo(peso, estatura, edad, sexo, nivel_actividad="moderado",
     carbos_g = carbos_kcal / 4
     
     return {
-        "bmr": int(bmr),
-        "tdee": int(tdee),
-        "target_cal": int(target_cal),
-        "macros": {
-            "proteinas_g": int(proteina_g),
-            "carbos_g": int(carbos_g),
-            "grasas_g": int(grasa_g)
-        }
+        "bmr": int(bmr), "tdee": int(tdee), "target_cal": int(target_cal),
+        "macros": { "proteinas_g": int(proteina_g), "carbos_g": int(carbos_g), "grasas_g": int(grasa_g) }
     }
 
-def filtrar_ejercicios_por_equipo(exercises, equipos_disponibles):
-    """
-    Filtra los ejercicios del dataset según las máquinas/equipos que tiene el usuario.
-    """
-    if not equipos_disponibles:
-        return exercises
+# =========================================================================
+# 3. MÓDULO: BIOMETRÍA Y COMPOSICIÓN CORPORAL
+# =========================================================================
+def calcular_imc(peso_kg, altura_cm):
+    """Calcula el Índice de Masa Corporal."""
+    if not peso_kg or not altura_cm or float(altura_cm) <= 0: return 0.0
+    return round(float(peso_kg) / ((float(altura_cm) / 100) ** 2), 1)
+
+def clasificar_imc(imc):
+    """Devuelve el estado clínico según el IMC."""
+    if imc == 0: return "Sin datos", "⚪"
+    if imc < 18.5: return "Bajo peso", "🔵"
+    elif 18.5 <= imc < 24.9: return "Peso normal", "🟢"
+    elif 25 <= imc < 29.9: return "Sobrepeso", "🟡"
+    else: return "Obesidad", "🔴"
+
+def calcular_grasa_marina(genero, altura, cuello, cintura, cadera=0):
+    """Calcula el % de grasa usando la fórmula logarítmica de la Marina de EE. UU."""
+    if altura <= 0 or cuello <= 0 or cintura <= 0: return 0.0
+    try:
+        if genero == "Masculino":
+            if cintura <= cuello: return 0.0
+            porcentaje = 495.0 / (1.0324 - 0.19077 * math.log10(cintura - cuello) + 0.15456 * math.log10(altura)) - 450.0
+        else:
+            if cintura + cadera <= cuello: return 0.0
+            porcentaje = 495.0 / (1.29579 - 0.35004 * math.log10(cintura + cadera - cuello) + 0.22100 * math.log10(altura)) - 450.0
         
-    equipos_clean = [str(eq).lower().strip() for eq in equipos_disponibles]
-    
-    filtrados = []
-    for ex in exercises:
-        eq = str(ex.get('equipment', '')).lower().strip()
-        if eq in equipos_clean or eq in ['body weight', 'bodyweight']:
-            filtrados.append(ex)
-            
-    return filtrados
+        return max(0.0, min(porcentaje, 60.0)) 
+    except ValueError:
+        return 0.0
+
+def analizar_composicion_corporal(peso, porcentaje_grasa):
+    """Divide el peso total en masa grasa y masa magra (libre de grasa)."""
+    kg_grasa = peso * (porcentaje_grasa / 100)
+    kg_magra = peso - kg_grasa
+    return round(kg_grasa, 1), round(kg_magra, 1)
+

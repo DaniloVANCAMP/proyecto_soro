@@ -1,42 +1,34 @@
 import os
 import sys
 import streamlit as st
+import requests
 from datetime import date, datetime
 import database as db
+
+# Importamos nuestro motor matemático central
+import utils.calculos as calc
 
 # Importamos los submódulos independientes
 from views import tab_1_1_datos, tab_1_2_estadisticas, tab_1_3_salud, tab_1_4_tips
 
-# --- FUNCIONES BASE ---
-def calcular_imc(peso_kg, altura_cm):
-    if not peso_kg or not altura_cm or float(altura_cm) <= 0: return 0.0
-    return round(float(peso_kg) / ((float(altura_cm) / 100) ** 2), 1)
-
-def clasificar_imc(imc):
-    if imc == 0: return "Sin datos", "⚪"
-    if imc < 18.5: return "Bajo peso", "🔵"
-    elif 18.5 <= imc < 24.9: return "Peso normal", "🟢"
-    elif 25 <= imc < 29.9: return "Sobrepeso", "🟡"
-    else: return "Obesidad", "🔴"
-
-def calcular_calorias_objetivo(peso, altura, edad, genero, objetivo):
-    if not peso or not altura or not edad: return 2000
-    peso, altura, edad = float(peso), float(altura), int(edad)
-    
-    if genero == "Masculino":
-        tmb = (10 * peso) + (6.25 * altura) - (5 * edad) + 5
-    else:
-        tmb = (10 * peso) + (6.25 * altura) - (5 * edad) - 161
-        
-    tmb_activa = tmb * 1.3
-    obj_str = str(objetivo).lower()
-    
-    if "perder" in obj_str or "bajar" in obj_str: return int(tmb_activa - 400)
-    elif "ganar" in obj_str or "volumen" in obj_str: return int(tmb_activa + 400)
-    else: return int(tmb_activa)
+# --- MOTOR DE CLIMA REAL (Caché de 1 hora) ---
+@st.cache_data(ttl=3600)
+def obtener_clima_cali():
+    """Consulta el clima real de Cali y lo guarda en caché por 1 hora."""
+    try:
+        # Coordenadas exactas de Cali, Colombia
+        url = "https://api.open-meteo.com/v1/forecast?latitude=3.4372&longitude=-76.5225&current=temperature_2m,relative_humidity_2m&timezone=America%2FBogota"
+        r = requests.get(url, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            temp = data["current"]["temperature_2m"]
+            hum = data["current"]["relative_humidity_2m"]
+            return f"{temp}°C", f"{hum}%"
+    except Exception:
+        pass
+    return "29.0°C", "65%" # Valores de respaldo si falla el internet
 
 def mostrar(exercises=None):
-    # 1. INICIALIZAR EL ENRUTADOR
     if "vista_activa" not in st.session_state:
         st.session_state.vista_activa = "dashboard"
 
@@ -45,17 +37,15 @@ def mostrar(exercises=None):
     perfil = db.obtener_perfil(user_id) or {}
 
     # ==========================================
-    # 2. LÓGICA DE NAVEGACIÓN A SUB-PÁGINAS
+    # LÓGICA DE NAVEGACIÓN A SUB-PÁGINAS
     # ==========================================
     if st.session_state.vista_activa != "dashboard":
-        # Botón para volver atrás
         if st.button("⬅️ Regresar al Panel Principal", type="primary", use_container_width=True):
             st.session_state.vista_activa = "dashboard"
             st.rerun()
         
         st.divider()
         
-        # Carga la vista correspondiente
         if st.session_state.vista_activa == "datos":
             tab_1_1_datos.mostrar(perfil)
         elif st.session_state.vista_activa == "stats":
@@ -65,11 +55,10 @@ def mostrar(exercises=None):
         elif st.session_state.vista_activa == "tips":
             tab_1_4_tips.mostrar(perfil)
             
-        # IMPORTANTE: Se detiene aquí para no dibujar el dashboard debajo
         return
 
     # ==========================================
-    # 3. DASHBOARD PRINCIPAL (Si vista_activa == 'dashboard')
+    # DASHBOARD PRINCIPAL
     # ==========================================
     st.markdown("""
     <style>
@@ -83,7 +72,6 @@ def mostrar(exercises=None):
     .metric-val { font-size: 1.3rem; font-weight: bold; color: #ffffff;}
     .seccion-titulo { font-size: 1.1rem; font-weight: bold; color: #eee; margin-top: 15px; margin-bottom: 15px;}
     
-    /* CSS PARA TRANSFORMAR BOTONES EN TARJETAS CUADRADAS */
     div[data-testid="stButton"] button {
         height: 80px;
         background-color: #262730;
@@ -110,43 +98,64 @@ def mostrar(exercises=None):
     nombre = perfil.get('nombre', 'Atleta').split()[0]
     st.markdown(f"<div class='header-panel'>👋 Hola, {nombre}</div>", unsafe_allow_html=True)
 
-    # --- CLIMA ---
+    # --- CLIMA REAL (Llamada a la API) ---
+    temp_real, hum_real = obtener_clima_cali()
     hoy = datetime.now()
     dias = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
     meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    
     st.markdown(f"""
     <div class='weather-card'>
         <div>
             <div class='weather-loc'>Cali, Colombia 🇨🇴</div>
-            <div class='weather-desc'>{dias[hoy.weekday()]}, {hoy.day} {meses[hoy.month - 1]} | 29°C • Hum 65%</div>
+            <div class='weather-desc'>{dias[hoy.weekday()]}, {hoy.day} {meses[hoy.month - 1]} | {temp_real} • Hum {hum_real}</div>
             <div style='font-size: 0.75rem; margin-top: 6px; color: #ffcc00; font-weight: bold;'>⚠️ Entrena con hidratación extra.</div>
         </div>
         <div class='weather-icon'>🌤️</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- MÉTRICAS ---
+    # --- EXTRACCIÓN Y CÁLCULOS CENTRALIZADOS ---
     st.markdown("<div class='seccion-titulo'>🔥 Monitoreo Diario</div>", unsafe_allow_html=True)
+    
     peso = float(perfil.get('peso', 0))
     altura = float(perfil.get('estatura', 0))
-    imc_actual = calcular_imc(peso, altura)
-    estado_imc, color_imc = clasificar_imc(imc_actual)
-    meta_calorias = calcular_calorias_objetivo(peso, altura, perfil.get('edad', 25), perfil.get('genero', 'Masculino'), perfil.get('objetivo', 'Mantenerse'))
+    edad = int(perfil.get('edad', 25))
+    genero = perfil.get('genero', 'Masculino')
+    objetivo = perfil.get('objetivo', 'Mantenerse')
+    
+    medidas = perfil.get("medidas", {})
+    cuello = float(medidas.get('cuello', 0))
+    cintura = float(medidas.get('cintura', 0))
+    cadera = float(medidas.get('cadera', 0))
+
+    # Invocamos la lógica separada
+    imc_actual = calc.calcular_imc(peso, altura)
+    estado_imc, color_imc = calc.clasificar_imc(imc_actual)
+    
+    metabolismo = calc.calcular_metabolismo(peso, altura, edad, genero, objetivo=objetivo)
+    meta_calorias = metabolismo["target_cal"]
+    
+    grasa_marina = calc.calcular_grasa_marina(genero, altura, cuello, cintura, cadera)
+    texto_grasa = f"{grasa_marina:.1f}%" if grasa_marina > 0 else "Sin datos"
     
     registro_hoy = db.obtener_nutricion(user_id, date.today().strftime("%Y-%m-%d")) or {}
     agua_consumida = float(registro_hoy.get("hidratacion_suplementos", {}).get("agua_litros", 0.0))
     calorias_consumidas = int(registro_hoy.get("totales", {}).get("cal", 0))
 
-    c1, c2, c3 = st.columns(3)
-    with c1: st.markdown(f"<div class='metric-card'><div class='metric-title'>⚖️ IMC</div><div class='metric-val'>{imc_actual}</div><div style='font-size: 0.7rem; color: #ddd;'>{color_imc} {estado_imc}</div></div>", unsafe_allow_html=True)
-    with c2: st.markdown(f"<div class='metric-card' style='border-left-color: #3498db;'><div class='metric-title'>💧 Agua</div><div class='metric-val'>{agua_consumida}L</div><div style='font-size: 0.7rem; color: #ddd;'>Meta: 3.0 L</div></div>", unsafe_allow_html=True)
-    with c3: st.markdown(f"<div class='metric-card' style='border-left-color: #e74c3c;'><div class='metric-title'>🎯 Calorías</div><div class='metric-val'>{calorias_consumidas}</div><div style='font-size: 0.7rem; color: #ddd;'>Meta: {meta_calorias}</div></div>", unsafe_allow_html=True)
+    # --- RENDERIZADO (GRID 2x2) ---
+    c1, c2 = st.columns(2)
+    with c1: 
+        st.markdown(f"<div class='metric-card'><div class='metric-title'>⚖️ IMC</div><div class='metric-val'>{imc_actual}</div><div style='font-size: 0.7rem; color: #ddd;'>{color_imc} {estado_imc}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-card' style='border-left-color: #f39c12;'><div class='metric-title'>📉 Grasa Corporal</div><div class='metric-val'>{texto_grasa}</div><div style='font-size: 0.7rem; color: #ddd;'>Fórmula Marina</div></div>", unsafe_allow_html=True)
+    with c2: 
+        st.markdown(f"<div class='metric-card' style='border-left-color: #3498db;'><div class='metric-title'>💧 Agua</div><div class='metric-val'>{agua_consumida}L</div><div style='font-size: 0.7rem; color: #ddd;'>Meta: 3.0 L</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-card' style='border-left-color: #e74c3c;'><div class='metric-title'>🎯 Calorías</div><div class='metric-val'>{calorias_consumidas}</div><div style='font-size: 0.7rem; color: #ddd;'>Meta: {meta_calorias} kcal</div></div>", unsafe_allow_html=True)
 
-    # --- CUADRÍCULA 2x2 REAL ---
+    # --- NAVEGACIÓN ---
     st.markdown("<div class='seccion-titulo'>📱 Explora tu Perfil</div>", unsafe_allow_html=True)
     
     c_btn1, c_btn2 = st.columns(2)
-    
     with c_btn1:
         if st.button("👤 Datos Usuario", use_container_width=True): 
             st.session_state.vista_activa = "datos"
@@ -154,7 +163,6 @@ def mostrar(exercises=None):
         if st.button("📈 Estadísticas", use_container_width=True): 
             st.session_state.vista_activa = "stats"
             st.rerun()
-            
     with c_btn2:
         if st.button("🏥 Salud Médica", use_container_width=True): 
             st.session_state.vista_activa = "salud"

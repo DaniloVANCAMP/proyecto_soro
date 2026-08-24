@@ -15,6 +15,7 @@ setuptools
 firebase-admin
 google-generativeai
 pillow
+plotly
 
 #python -m streamlit run app.py
 # OJO FALTA VERIFICACION INICIAL(verificación oficial)

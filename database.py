@@ -156,6 +156,17 @@ def guardar_en_bitacora(lista_microdatos):
     except Exception as e:
         print(f"Error al guardar en bitacora: {e}")
 
+@st.cache_data(ttl=60)
+def obtener_bitacora(user_id):
+    """Extrae todo el historial de microdatos de un usuario desde Firebase."""
+    if not user_id: return []
+    try:
+        docs = db.collection("bitacora").where("user_id", "==", str(user_id)).get()
+        return [doc.to_dict() for doc in docs]
+    except Exception as e:
+        print(f"Error al obtener bitacora: {e}")
+        return []
+
 # ==========================================
 # 5. ALIMENTOS COMUNITARIOS (CATÁLOGO GRATIS)
 # ==========================================
