@@ -22,22 +22,22 @@ DICCIONARIO_ZONAS = {
     "waist": "Cintura / Abdomen"
 }
 DICCIONARIO_EQUIPO = {
-    "assisted": "Asistido / Máquina de asistencia", "band": "Banda de resistencia",
-    "barbell": "Barra recta", "body weight": "Peso corporal (Calistenia)",
+    "assisted": "Asistido", "band": "Banda de resistencia",
+    "barbell": "Barra recta", "body weight": "Peso corporal",
     "bosu ball": "Bosu", "cable": "Polea / Cable", "dumbbell": "Mancuerna",
-    "elliptical machine": "Elíptica", "ez barbell": "Barra Z / EZ", "hammer": "Máquina Hammer",
-    "kettlebell": "Pesa Rusa (Kettlebell)", "leverage machine": "Máquina de palanca",
+    "elliptical machine": "Elíptica", "ez barbell": "Barra Z", "hammer": "Máquina Hammer",
+    "kettlebell": "Pesa Rusa", "leverage machine": "Máquina de palanca",
     "medicine ball": "Balón Medicinal", "olympic barbell": "Barra Olímpica",
-    "resistance band": "Banda de resistencia", "roller": "Rodillo (Foam Roller)",
-    "rope": "Cuerda / Soga", "skierg machine": "SkiErg", "sled machine": "Trineo de empuje",
-    "smith machine": "Máquina Smith / Multipower", "stability ball": "Fitball",
+    "resistance band": "Banda de resistencia", "roller": "Rodillo",
+    "rope": "Cuerda", "skierg machine": "SkiErg", "sled machine": "Trineo de empuje",
+    "smith machine": "Máquina Smith", "stability ball": "Fitball",
     "stationary bike": "Bicicleta estática", "stepmill machine": "Escaladora",
     "tire": "Neumático", "trap bar": "Barra Hexagonal",
     "upper body ergometer": "Ergómetro superior", "weighted": "Lastrado",
     "wheel roller": "Rueda Abdominal"
 }
 DICCIONARIO_MUSCULOS = {
-    "glutes": "Glúteos", "gluteus": "Glúteos", "gluteus maximus": "Glúteo Mayor",
+    "glutes": "Glúteos", "gluteus maximus": "Glúteo Mayor",
     "gluteus medius": "Glúteo Medio", "gluteus minimus": "Glúteo Menor", "hip flexors": "Flexores de Cadera",
     "abductors": "Abductores", "adductors": "Aductores", "quads": "Cuádriceps", "quadriceps": "Cuádriceps",
     "hamstrings": "Isquiotibiales / Femorales", "calves": "Pantorrillas / Gemelos",
@@ -91,6 +91,7 @@ def guardar_presets(presets):
     with open(ARCHIVO_PRESETS, "w", encoding="utf-8") as archivo:
         json.dump(presets, archivo, indent=4)
 
+# Mantenemos esta función porque el Generador de Rutinas la usa internamente, pero borramos la visual.
 def cargar_perfil():
     user_id = st.session_state.get("user_id")
     default = {
@@ -118,19 +119,6 @@ def cargar_perfil():
             }
     return default
 
-def guardar_perfil(datos_ml):
-    user_id = st.session_state.get("user_id")
-    if user_id:
-        datos_db = {
-            "nombre": datos_ml["nombre"], "edad": datos_ml["edad"], "genero": datos_ml["sexo"],
-            "nivel": "Intermedio", "estatura": datos_ml["estatura_cm"], "peso": datos_ml["peso_kg"],
-            "medidas": {
-                "pecho": 0.0, "cintura": datos_ml["cintura"], "pierna": datos_ml["cuadriceps"],
-                "brazo": datos_ml["biceps"], "cadera": datos_ml["cadera"], "pantorrilla": datos_ml["pantorrilla"]
-            }
-        }
-        db.guardar_perfil(user_id, datos_db)
-
 def guardar_en_bitacora(nuevos_datos):
     archivo = "bitacora_microdatos.json"
     try:
@@ -156,7 +144,7 @@ def obtener_clima_api(ciudad):
         pass
     return "Desconocido", 25
 
-@st.cache_data(show_spinner="Cargando 1300+ ejercicios desde la API...")
+@st.cache_data(show_spinner="Cargando ejercicios desde la API...")
 def cargar_ejercicios_completos():
     try:
         respuesta = requests.get(URL_JSON, timeout=10)
@@ -175,67 +163,77 @@ def cargar_ejercicios_completos():
 # 3. INTERFAZ PRINCIPAL (ROUTER)
 # ==========================================
 def mostrar(exercises_param=None, base_media_url_param=None):
-    # CSS MAESTRO NUCLEAR V2 (Fuerza Bruta para los Tabs)
+    # CSS MAESTRO NUCLEAR V3: Transformando TABS en un GRID 2x2 Real
     st.markdown("""
     <style>
-    /* Tarjetas de configuración */
+    /* Titulos */
     .titulo-config { 
-        color: #ff4b4b; 
-        font-size: 1.5rem; 
+        color: #e74c3c; 
+        font-size: 1.4rem; 
         font-weight: bold; 
         margin-bottom: 10px; 
         margin-top: 15px; 
-    }
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        border-radius: 12px;
-        border: 1px solid #333;
-        background-color: #1a1a1a;
-        padding: 10px;
-    }
-
-    /* TABS ESTILO BOTONES CUADRADOS (Usando role="tab" que no falla) */
-    div[data-testid="stTabs"] button[role="tab"] {
-        background-color: #2b2b2b !important;
-        border: 1px solid #444 !important;
-        border-radius: 8px !important;
-        padding: 8px 12px !important;
-        margin-right: 8px !important;
-        height: auto !important;
+        border-bottom: 2px solid #e74c3c;
+        padding-bottom: 5px;
     }
     
-    /* Pestaña Activa */
+    /* MAGIA GRID PARA LAS PESTAÑAS (TABS) */
+    /* Esto toma el contenedor original de las pestañas y lo obliga a ser una cuadrícula */
+    div[data-baseweb="tab-list"] {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+    
+    /* Estilo de cada pestaña para que parezca una tarjeta premium */
+    div[data-testid="stTabs"] button[role="tab"] {
+        background-color: #1a1c24 !important;
+        border: 1px solid #2d303e !important;
+        border-radius: 12px !important;
+        padding: 15px 10px !important;
+        margin: 0 !important;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+    
+    /* Pestaña Activa (Seleccionada) */
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-        background-color: #ff4b4b !important;
-        border: 1px solid #ff4b4b !important;
+        background-color: #2b2b2b !important;
+        border: 1px solid #e74c3c !important;
+        border-bottom: 4px solid #e74c3c !important; /* Borde rojo imponente abajo */
     }
     
     /* Textos de las Pestañas */
     div[data-testid="stTabs"] button[role="tab"] p {
         color: #aaaaaa !important; 
-        font-size: 14px !important;
+        font-size: clamp(0.85rem, 3vw, 1.1rem) !important;
+        font-weight: 600 !important;
         margin: 0 !important;
+        text-align: center !important;
     }
     
     /* Texto Pestaña Activa */
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] p {
         color: #ffffff !important; 
-        font-weight: bold !important;
+        font-weight: 800 !important;
     }
     
-    /* Eliminar la raya inferior de Streamlit */
-    div[data-testid="stTabs"] div[data-baseweb="tab-highlight"],
-    div[data-testid="stTabs"] div[data-baseweb="tab-border"] {
+    /* Ocultar las rayas default feas de Streamlit */
+    div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] {
         display: none !important;
-        background-color: transparent !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # TÍTULO SIMÉTRICO Y COMPACTO
+    # TÍTULO PRINCIPAL
     st.markdown("""
-    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px;">
         <span style="font-size: 2.2rem;">💪</span>
-        <h1 style="margin: 0; padding: 0; text-align: center; font-size: 2.2rem; line-height: 1.1;">Centro Entrenamiento</h1>
+        <h1 style="margin: 0; padding: 0; text-align: center; font-size: 2.2rem; line-height: 1.1; color: white;">Centro Entrenamiento</h1>
         <span style="font-size: 2.2rem; display: inline-block; transform: scaleX(-1);">💪</span>
     </div>
     """, unsafe_allow_html=True)
@@ -249,49 +247,13 @@ def mostrar(exercises_param=None, base_media_url_param=None):
         st.error("No se pudieron cargar los ejercicios. Verifica tu conexión.")
         return
 
+    # Cargamos el perfil de forma invisible (sin la UI)
     perfil_actual = cargar_perfil()
-    with st.expander("🧬 Mi Perfil Biométrico (Actualiza tus medidas aquí)", expanded=False):
-        with st.form("form_biometria_catalogo"):
-            st.subheader("Datos Demográficos")
-            col_d1, col_d2, col_d3 = st.columns(3)
-            nombre = col_d1.text_input("Nombre", value=perfil_actual["nombre"])
-            sexo_db = perfil_actual.get("sexo", "Masculino")
-            sexo_idx = ["Masculino", "Femenino", "Otro"].index(sexo_db) if sexo_db in ["Masculino", "Femenino", "Otro"] else 0
-            sexo = col_d2.selectbox("Sexo", ["Masculino", "Femenino", "Otro"], index=sexo_idx)
-            edad = col_d3.number_input("Edad", min_value=10, max_value=100, value=int(perfil_actual["edad"]))
-            
-            st.subheader("Física General y Medidas (cm / kg)")
-            col_f1, col_f2 = st.columns(2)
-            estatura = col_f1.number_input("Estatura (cm)", min_value=100.0, max_value=250.0, value=float(perfil_actual["estatura_cm"]), step=1.0)
-            peso = col_f2.number_input("Peso Actual (kg)", min_value=30.0, max_value=200.0, value=float(perfil_actual["peso_kg"]), step=0.1)
-            
-            st.markdown("**Perímetros Musculares (cm)**")
-            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-            biceps = col_m1.number_input("Bíceps", value=float(perfil_actual["biceps"]), step=0.5)
-            abdomen = col_m2.number_input("Abdomen", value=float(perfil_actual["abdomen"]), step=0.5)
-            cintura = col_m3.number_input("Cintura", value=float(perfil_actual["cintura"]), step=0.5)
-            cadera = col_m4.number_input("Cadera", value=float(perfil_actual["cadera"]), step=0.5)
-            
-            col_m5, col_m6, col_m7, _ = st.columns(4)
-            gluteos = col_m5.number_input("Glúteos", value=float(perfil_actual["gluteos"]), step=0.5)
-            cuadriceps = col_m6.number_input("Cuádriceps", value=float(perfil_actual["cuadriceps"]), step=0.5)
-            pantorrilla = col_m7.number_input("Pantorrilla", value=float(perfil_actual["pantorrilla"]), step=0.5)
-            
-            if st.form_submit_button("💾 Guardar Biometría", use_container_width=True):
-                nuevos_datos = {
-                    "nombre": nombre, "sexo": sexo, "edad": edad, "estatura_cm": estatura,
-                    "peso_kg": peso, "biceps": biceps, "abdomen": abdomen, "cintura": cintura,
-                    "cadera": cadera, "gluteos": gluteos, "cuadriceps": cuadriceps, "pantorrilla": pantorrilla
-                }
-                guardar_perfil(nuevos_datos)
-                st.success("¡Perfil biométrico actualizado!")
-                time.sleep(1.5)
-                st.rerun()
 
     # ==========================================
     # SECCIÓN: CONFIGURACIÓN DE LA SESIÓN 
     # ==========================================
-    st.markdown("<div class='titulo-config'>Configuración de la Sesión</div>", unsafe_allow_html=True)
+    st.markdown("<div class='titulo-config'>⚙️ Configuración de la Sesión</div>", unsafe_allow_html=True)
     
     with st.container(border=True):
         col_perfil, col_dias, col_obj = st.columns([2, 1, 1], vertical_alignment="bottom")
@@ -328,10 +290,10 @@ def mostrar(exercises_param=None, base_media_url_param=None):
                         guardar_presets(presets)
                         st.rerun()
 
-    st.divider()
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    # ENRUTAMIENTO HACIA LOS 3 MÓDULOS HIJOS
-    tab_planificador, tab_generador, tab_catalogo = st.tabs(["📅 Planificador Semanal", "⚡ Generador de Rutinas", "🔍 Catálogo de Consulta"])
+    # ENRUTAMIENTO HACIA LOS MÓDULOS HIJOS (El CSS arriba los convierte en una grilla 2x2)
+    tab_planificador, tab_generador, tab_catalogo = st.tabs(["📅 Planificador", "⚡ Generador", "🔍 Catálogo"])
 
     with tab_planificador:
         tab_2_1_planificador.mostrar(ejercicios, equipos_seleccionados, perfil_elegido, BASE_MEDIA_URL, traducir_nombre_ejercicio)
@@ -341,6 +303,3 @@ def mostrar(exercises_param=None, base_media_url_param=None):
 
     with tab_catalogo:
         tab_2_3_catalogo_gral.mostrar(ejercicios, equipos_seleccionados, BASE_MEDIA_URL, traducir_nombre_ejercicio)
-
-if __name__ == "__main__":
-    mostrar()
