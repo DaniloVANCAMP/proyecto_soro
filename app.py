@@ -158,19 +158,16 @@ def main():
         # Ocultamos la etiqueta del menú porque el diseño ya habla por sí solo
         menu = st.sidebar.radio("Navegación", opciones_menu, index=idx_menu, label_visibility="collapsed")
 
-        # --- AQUÍ ESTÁ LA MAGIA CORREGIDA ---
+        # --- NAVEGACIÓN LIMPIA SIN REEJECUCIÓN DUPLICADA ---
         if st.query_params.get("menu") != menu:
             st.query_params["menu"] = menu
-            st.rerun() # <-- Esto obliga a la app a recargar al instante y evita el doble clic
+            st.rerun()
 
-        # --- ENRUTAMIENTO ---
+        # --- ENRUTAMIENTO DIRECTO ---
         if menu == "👤 Mi Perfil y Entorno":
             tab_1_perfil.mostrar(exercises)
         elif menu == "🏋️ Rutinas y Catálogo":
-            try:
-                tab_2_catalogo.mostrar(exercises, BASE_MEDIA_URL)
-            except TypeError:
-                tab_2_catalogo.mostrar()
+            tab_2_catalogo.mostrar(exercises, BASE_MEDIA_URL)
         elif menu == "🍏 Nutrición y Suplementación":
             tab_5_nutricion.mostrar()
         elif menu == "📝 Bitácora Diaria":

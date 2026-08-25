@@ -202,7 +202,7 @@ def mostrar(exercises_param=None, base_media_url_param=None):
     perfil_actual = cargar_perfil()
 
     # ==========================================
-    # SECCIÓN: CONFIGURACIÓN (BLINDADA A PRUEBA DE F5)
+    # SECCIÓN: CONFIGURACIÓN
     # ==========================================
     st.markdown("<div class='titulo-config'>⚙️ Configuración de la Sesión</div>", unsafe_allow_html=True)
     
@@ -210,9 +210,9 @@ def mostrar(exercises_param=None, base_media_url_param=None):
     opciones_perfil = list(presets.keys()) + ["➕ Crear nuevo lugar/perfil..."]
     opciones_obj = ["Hipertrofia", "Fuerza", "Resistencia", "Pérdida de Peso"]
 
-    if "config_lugar" not in st.session_state or st.session_state.config_lugar not in opciones_perfil:
+    if "config_lugar_main" not in st.session_state or st.session_state.config_lugar_main not in opciones_perfil:
         url_lugar = st.query_params.get("lugar", opciones_perfil[0])
-        st.session_state.config_lugar = url_lugar if url_lugar in opciones_perfil else opciones_perfil[0]
+        st.session_state.config_lugar_main = url_lugar if url_lugar in opciones_perfil else opciones_perfil[0]
         
     if "config_dias" not in st.session_state:
         st.session_state.config_dias = int(st.query_params.get("dias", 4))
@@ -222,14 +222,13 @@ def mostrar(exercises_param=None, base_media_url_param=None):
         st.session_state.config_objetivo = url_obj if url_obj in opciones_obj else opciones_obj[0]
 
     def actualizar_memoria():
-        st.query_params["lugar"] = st.session_state.config_lugar
+        st.query_params["lugar"] = st.session_state.config_lugar_main
         st.query_params["dias"] = str(st.session_state.config_dias)
         st.query_params["obj"] = st.session_state.config_objetivo
 
     with st.container(border=True):
-        perfil_elegido = st.selectbox("Lugar de entrenamiento activo:", opciones_perfil, key="config_lugar", on_change=actualizar_memoria)
+        perfil_elegido = st.selectbox("Lugar de entrenamiento activo:", opciones_perfil, key="config_lugar_main", on_change=actualizar_memoria)
         
-        # --- INICIO BOTONERA DE DÍAS ESTILO APP NATIVA ---
         st.markdown("<p style='font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 5px; margin-top: 5px;'>Días a entrenar por semana:</p>", unsafe_allow_html=True)
         
         dias_entreno = st.radio(
@@ -243,9 +242,7 @@ def mostrar(exercises_param=None, base_media_url_param=None):
 
         dias = st.session_state.config_dias
         
-        # CSS ULTRA ESPECÍFICO QUE ANIQUILA EL CÍRCULO Y EXPANDE AL 100%
         css_botonera = """<style>
-        /* Estirar el radio group al 100% de la tarjeta */
         section.main div[data-testid="stRadio"],
         section.main div[data-testid="stRadio"] > div,
         section.main div[data-testid="stRadio"] div[role="radiogroup"] {
@@ -257,7 +254,6 @@ def mostrar(exercises_param=None, base_media_url_param=None):
             margin-bottom: 10px !important;
         }
 
-        /* Cada tarjeta se reparte por igual en el ancho (1/7 cada una) */
         section.main div[data-testid="stRadio"] div[role="radiogroup"] > label {
             flex: 1 1 0% !important;
             width: 100% !important;
@@ -275,7 +271,6 @@ def mostrar(exercises_param=None, base_media_url_param=None):
             transition: all 0.3s ease !important;
         }
 
-        /* ELIMINACIÓN NUCLEAR DE LOS CÍRCULOS DEL RADIO BUTTON */
         section.main div[data-testid="stRadio"] div[role="radiogroup"] label > div:first-of-type,
         section.main div[data-testid="stRadio"] div[role="radiogroup"] label [data-baseweb="radio"],
         section.main div[data-testid="stRadio"] div[role="radiogroup"] label input {
@@ -288,7 +283,6 @@ def mostrar(exercises_param=None, base_media_url_param=None):
             pointer-events: none !important;
         }
 
-        /* Centrar el número perfectamente */
         section.main div[data-testid="stRadio"] div[role="radiogroup"] label p { 
             color: #aaaaaa !important; 
             font-weight: 800 !important; 
@@ -300,7 +294,6 @@ def mostrar(exercises_param=None, base_media_url_param=None):
         }
         """
         
-        # Color degradado dinámico por cada opción activa
         for i in range(1, dias + 1):
             intensidad = 0.4 + (0.6 * (i / dias))
             css_botonera += f"""
@@ -317,7 +310,6 @@ def mostrar(exercises_param=None, base_media_url_param=None):
             
         css_botonera += "</style>"
         st.markdown(css_botonera, unsafe_allow_html=True)
-        # --- FIN BOTONERA DE DÍAS ESTILO APP NATIVA ---
         
         objetivo = st.selectbox("Objetivo:", opciones_obj, key="config_objetivo", on_change=actualizar_memoria)
 
@@ -330,7 +322,7 @@ def mostrar(exercises_param=None, base_media_url_param=None):
                 if nuevo_nombre not in presets:
                     presets[nuevo_nombre] = []
                     guardar_presets(presets)
-                    st.session_state.config_lugar = nuevo_nombre
+                    st.session_state.config_lugar_main = nuevo_nombre
                     actualizar_memoria()
                     st.rerun()
         else:

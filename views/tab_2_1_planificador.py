@@ -2,7 +2,7 @@ import json
 import os
 import time
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 import streamlit as st
 import database as db
 
@@ -100,20 +100,6 @@ def mostrar(
             font-size: 1.2rem;
             font-weight: 700;
         }
-
-        /* Ajustes para el Calendario Horizontal */
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] button {
-            border-radius: 10px !important;
-            padding: 6px 2px !important;
-            background-color: #1a1c24 !important;
-            border: 1px solid #2d303e !important;
-            transition: all 0.3s ease !important;
-            width: 100% !important;
-        }
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] button:hover {
-            border-color: #e74c3c !important;
-            background-color: #242733 !important;
-        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -122,7 +108,11 @@ def mostrar(
     user_id = st.session_state.get("user_id")
 
     st.markdown("### 🗓️ Tu Calendario Semanal")
-    hoy = date.today()
+    
+    # HORA COLOMBIA SIN LIBRERÍAS EXTERNAS (UTC -5)
+    zona_colombia = timezone(timedelta(hours=-5))
+    hoy = datetime.now(zona_colombia).date()
+    
     lunes = hoy - timedelta(days=hoy.weekday())
     dias_nombres = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"]
 
@@ -143,20 +133,15 @@ def mostrar(
 
         texto_boton = f"{dias_nombres[i]} {num_dia}\n{subtexto}"
 
-        with col:
-            if es_activo:
-                st.markdown(
-                    "<style>div[data-testid='stHorizontalBlock'] >"
-                    f" div[data-testid='stColumn']:nth-child({i+1}) button {{ border:"
-                    " 2px solid #e74c3c !important; background-color: #2b2b2b"
-                    " !important; }}</style>",
-                    unsafe_allow_html=True,
-                )
+        # Colores nativos en vez de CSS forzado
+        tipo_boton = "primary" if es_activo else "secondary"
 
+        with col:
             if st.button(
-                texto_boton, key=f"btn_dia_{i}", use_container_width=True
+                texto_boton, key=f"btn_dia_{i}", use_container_width=True, type=tipo_boton
             ):
                 st.session_state["dia_activo"] = fecha_iter
+                st.rerun()
 
     fecha_seleccionada = st.session_state["dia_activo"]
     fecha_str = fecha_seleccionada.strftime("%Y-%m-%d")
@@ -347,10 +332,13 @@ def mostrar(
         for idx, item in enumerate(st.session_state["rutina_borrador"]):
             m = item.get("musculo", "Desconocido")
             e = item.get("equipo", "Desconocido")
+            
+            # EL CAMBIO ESTÁ AQUÍ (Línea 337 original): se inicializa como {} en vez de []
             if m not in rutina_agrupada:
                 rutina_agrupada[m] = {}
             if e not in rutina_agrupada[m]:
                 rutina_agrupada[m][e] = []
+                
             rutina_agrupada[m][e].append((idx, item))
 
         for musculo, equipos in rutina_agrupada.items():
@@ -477,8 +465,8 @@ def mostrar(
                 perfil = db.obtener_perfil(user_id) or {}
                 datos_ml_completados = []
                 
-                # Sincronizamos la fecha del entrenamiento con la que seleccionaste en el calendario
-                hora_actual = datetime.now().strftime("%H:%M:%S.%f")
+                # HORA COLOMBIA AL GUARDAR EN BITÁCORA
+                hora_actual = datetime.now(zona_colombia).strftime("%H:%M:%S.%f")
                 fecha_timestamp = f"{fecha_str}T{hora_actual}"
 
                 for item in st.session_state["rutina_borrador"]:

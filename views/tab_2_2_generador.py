@@ -2,7 +2,8 @@ import streamlit as st
 import random
 import uuid
 import json
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+import database as db  # <-- IMPORTADO PARA GUARDAR DIRECTO EN FIREBASE
 
 def extraer_instrucciones(datos_brutos):
     """Extrae las instrucciones en español de manera segura"""
@@ -38,25 +39,43 @@ def mostrar(ejercicios, equipos_seleccionados, perfil_actual, perfil_elegido, ob
     </style>
     """, unsafe_allow_html=True)
 
+    user_id = st.session_state.get("user_id")
+
     st.markdown("### ⚡ Generador Inteligente")
     
     with st.container(border=True):
         col_gen1, col_gen2, col_gen3 = st.columns(3)
         with col_gen1:
-            enfoque = st.selectbox("Enfoque muscular:", ["Cuerpo Completo", "Tren Superior", "Tren Inferior", "Personalizado"])
+            enfoque = st.selectbox(
+                "Enfoque muscular:", 
+                ["Cuerpo Completo", "Tren Superior", "Tren Inferior", "Personalizado"],
+                key="gen_enfoque_muscular"
+            )
         with col_gen2:
-            duracion = st.number_input("Duración (min):", min_value=15, max_value=180, value=60, step=5)
+            duracion = st.number_input(
+                "Duración (min):", 
+                min_value=15, max_value=180, value=60, step=5,
+                key="gen_duracion_min"
+            )
         with col_gen3:
-            ejercicios_por_musculo = st.number_input("Ejercicios por músculo:", min_value=1, max_value=6, value=2, step=1)
+            ejercicios_por_musculo = st.number_input(
+                "Ejercicios por músculo:", 
+                min_value=1, max_value=6, value=2, step=1,
+                key="gen_ej_por_musculo"
+            )
 
         musculos_personalizados = []
         if enfoque == "Personalizado":
             lista_todos_musculos = sorted(list(set([ej.get("target_trad") for ej in ejercicios if ej.get("target_trad")])))
-            musculos_personalizados = st.multiselect("Selecciona los músculos:", lista_todos_musculos)
+            musculos_personalizados = st.multiselect(
+                "Selecciona los músculos:", 
+                lista_todos_musculos,
+                key="gen_musculos_personalizados"
+            )
 
         btn_deshabilitado = (enfoque == "Personalizado" and len(musculos_personalizados) == 0)
 
-        if st.button("⚡ GENERAR RUTINA", type="primary", use_container_width=True, disabled=btn_deshabilitado):
+        if st.button("⚡ GENERAR RUTINA", type="primary", use_container_width=True, disabled=btn_deshabilitado, key="gen_btn_generar"):
             candidatos_equipo = ejercicios
             if equipos_seleccionados:
                 candidatos_equipo = [ej for ej in ejercicios if ej.get("equipment_trad") in equipos_seleccionados]
@@ -125,59 +144,11 @@ def mostrar(ejercicios, equipos_seleccionados, perfil_actual, perfil_elegido, ob
                     
                     for idx, item in ejercicios_lista:
                         hecho_key = f"gen_done_{item['id_unico']}"
-                        guardado_key = f"gen_saved_{item['id_unico']}"
-                        
                         esta_hecho = st.session_state.get(hecho_key, False)
-                        ya_guardado = st.session_state.get(guardado_key, False)
-                        
-                        # LÓGICA DE AUTOGUARDADO INVISIBLE
-                        if esta_hecho and not ya_guardado:
-                            fecha_actual = datetime.now().isoformat()
-                            microdato = {
-                                "id_evento": str(uuid.uuid4()), "timestamp": fecha_actual,
-                                "user_id": st.session_state.get("user_id", "local_user"),
-                                "usuario": {
-                                    "nombre": perfil_actual.get("nombre", ""), "sexo": perfil_actual.get("sexo", ""),
-                                    "edad": perfil_actual.get("edad", 0), "estatura_cm": perfil_actual.get("estatura_cm", 0)
-                                },
-                                "biometria_diaria": {
-                                    "peso_kg": perfil_actual.get("peso_kg", 0.0),
-                                    "medidas_cm": {
-                                        "biceps": perfil_actual.get("biceps", 0), "abdomen": perfil_actual.get("abdomen", 0),
-                                        "cintura": perfil_actual.get("cintura", 0), "cadera": perfil_actual.get("cadera", 0),
-                                        "gluteos": perfil_actual.get("gluteos", 0), "cuadriceps": perfil_actual.get("cuadriceps", 0),
-                                        "pantorrilla": perfil_actual.get("pantorrilla", 0)
-                                    }
-                                },
-                                "contexto_ambiental": {
-                                    "lugar_entrenamiento": perfil_elegido,
-                                    "clima": "No registrado", "temperatura_c": 25
-                                },
-                                "metrica_sesion": {
-                                    "esfuerzo_rpe": 7, "objetivo_entrenamiento": objetivo
-                                },
-                                "ejercicio": {
-                                    "id_api": item.get("id_api", ""), "nombre": item.get("nombre", ""),
-                                    "musculo_objetivo": item.get("musculo", ""), "equipo_usado": item.get("equipo", "")
-                                },
-                                "ejecucion": {
-                                    "peso_levantado_kg": st.session_state.get(f"gpeso_{item['id_unico']}", 0.0),
-                                    "completado": True
-                                }
-                            }
-                            guardar_en_bitacora([microdato])
-                            st.session_state[guardado_key] = True
-                            ya_guardado = True
-                            st.toast(f"✅ ¡{item['nombre']} guardado en la bitácora!", icon="💾")
-                        
-                        elif not esta_hecho and ya_guardado:
-                            st.session_state[guardado_key] = False
-                            ya_guardado = False
-
                         opacidad = "0.5" if esta_hecho else "1.0"
                         
                         with st.container(border=True):
-                            if esta_hecho: st.success(f"✅ Completado")
+                            if esta_hecho: st.success("✅ Completado")
                             
                             st.markdown(f"<div style='opacity: {opacidad};'>", unsafe_allow_html=True)
                             
@@ -197,18 +168,28 @@ def mostrar(ejercicios, equipos_seleccionados, perfil_actual, perfil_elegido, ob
                             
                             st.write("")
                             
-                            # 4. Inputs
+                            # 4. Inputs de validación (Peso y RPE unidos)
                             c_s, c_r = st.columns(2)
-                            item["series"] = c_s.number_input("Series", min_value=1, value=item["series"], key=f"gs_{item['id_unico']}", disabled=esta_hecho)
-                            item["reps"] = c_r.number_input("Repeticiones", min_value=1, value=item["reps"], key=f"gr_{item['id_unico']}", disabled=esta_hecho)
-                            st.number_input("Peso (kg)", min_value=0.0, step=1.0, value=0.0, key=f"gpeso_{item['id_unico']}", disabled=esta_hecho)
+                            item["series"] = c_s.number_input("Series", min_value=1, value=int(item.get("series", 3)), key=f"gs_{item['id_unico']}", disabled=esta_hecho)
+                            item["reps"] = c_r.number_input("Repeticiones", min_value=1, value=int(item.get("reps", 10)), key=f"gr_{item['id_unico']}", disabled=esta_hecho)
+                            
+                            c_p, c_e = st.columns(2)
+                            peso_val = c_p.number_input("Peso (kg)", min_value=0.0, step=1.0, value=float(st.session_state.get(f"gpeso_{item['id_unico']}", 0.0)), key=f"gpeso_{item['id_unico']}", disabled=esta_hecho)
+                            rpe_val = c_e.number_input("Esfuerzo (RPE 1-10)", min_value=0, max_value=10, step=1, value=int(st.session_state.get(f"grpe_{item['id_unico']}", 0)), help="1=Muy Suave, 10=Fallo Muscular", key=f"grpe_{item['id_unico']}", disabled=esta_hecho)
                             
                             st.markdown("</div>", unsafe_allow_html=True)
                             
+                            # Validar que los datos tengan sentido antes de permitir marcar
+                            es_valido = (peso_val > 0.0) and (rpe_val >= 1) and (item["series"] >= 1) and (item["reps"] >= 1)
+
                             # Acciones (Hecho y Cambiar)
                             col_check, col_swap = st.columns([1.5, 1], vertical_alignment="center")
                             with col_check:
-                                st.checkbox("✅ Marcar Realizado", key=hecho_key)
+                                if not es_valido:
+                                    st.caption("⚠️ Ingresa el Peso (> 0 kg) y el RPE (1 a 10) para habilitar el registro.")
+                                    st.checkbox("✅ Marcar Realizado", key=hecho_key, value=False, disabled=True)
+                                else:
+                                    st.checkbox("✅ Marcar Realizado", key=hecho_key)
                             with col_swap:
                                 # Lógica de Swap Inteligente
                                 if not esta_hecho:
@@ -231,3 +212,77 @@ def mostrar(ejercicios, equipos_seleccionados, perfil_actual, perfil_elegido, ob
                                             st.toast("⚠️ No hay más alternativas para este músculo con tu equipo actual.", icon="⚠️")
                         
                         st.write("")
+
+        # === NUEVO BOTÓN INFERIOR DE GUARDADO (IGUAL QUE EN PLANIFICADOR) ===
+        st.divider()
+        if st.button(
+            "🏁 GUARDAR PROGRESO EN BITÁCORA",
+            type="primary",
+            use_container_width=True,
+            key="btn_guardar_generador"
+        ):
+            if user_id:
+                perfil = db.obtener_perfil(user_id) or {}
+                datos_ml_completados = []
+                
+                zona_colombia = timezone(timedelta(hours=-5))
+                fecha_str = datetime.now(zona_colombia).strftime("%Y-%m-%d")
+                hora_actual = datetime.now(zona_colombia).strftime("%H:%M:%S.%f")
+                fecha_timestamp = f"{fecha_str}T{hora_actual}"
+
+                for item in st.session_state["rutina_generada"]:
+                    hecho_key = f"gen_done_{item['id_unico']}"
+                    
+                    if st.session_state.get(hecho_key, False):
+                        peso_cargado = st.session_state.get(f"gpeso_{item['id_unico']}", 0.0)
+                        rpe_cargado = st.session_state.get(f"grpe_{item['id_unico']}", 0)
+                        series_cargadas = st.session_state.get(f"gs_{item['id_unico']}", int(item.get("series", 3)))
+                        reps_cargadas = st.session_state.get(f"gr_{item['id_unico']}", int(item.get("reps", 10)))
+
+                        microdato = {
+                            "id_evento": str(uuid.uuid4()),
+                            "timestamp": fecha_timestamp,
+                            "user_id": user_id,
+                            "usuario": {
+                                "nombre": perfil.get("nombre", ""),
+                                "sexo": perfil.get("genero", ""),
+                                "edad": perfil.get("edad", 0),
+                                "estatura_cm": perfil.get("estatura", 0),
+                            },
+                            "biometria_diaria": {
+                                "peso_kg": perfil.get("peso", 0.0),
+                                "medidas_cm": perfil.get("medidas", {}),
+                            },
+                            "contexto_ambiental": {
+                                "lugar_entrenamiento": perfil_elegido,
+                                "equipamiento": st.session_state.get("config_equipo_actual", "Ninguno"),
+                                "clima": st.session_state.get("clima_actual", "Desconocido"),
+                                "temperatura_c": st.session_state.get("temp_actual", 25),
+                            },
+                            "metrica_sesion": {
+                                "esfuerzo_rpe": rpe_cargado,
+                                "objetivo_entrenamiento": st.session_state.get("config_objetivo", objetivo),
+                            },
+                            "ejercicio": {
+                                "id_api": item.get("id_api", ""),
+                                "nombre": item.get("nombre", ""),
+                                "musculo_objetivo": item.get("musculo", ""),
+                                "equipo_usado": item.get("equipo", ""),
+                            },
+                            "ejecucion": {
+                                "series": series_cargadas,
+                                "reps": reps_cargadas,
+                                "peso_levantado_kg": peso_cargado,
+                                "esfuerzo_rpe": rpe_cargado,
+                                "completado": True,
+                            },
+                        }
+                        datos_ml_completados.append(microdato)
+
+                if datos_ml_completados:
+                    db.guardar_en_bitacora(datos_ml_completados)
+                    st.success(f"¡Brutal! {len(datos_ml_completados)} ejercicios guardados directamente en Firebase. 🧠🏆")
+                else:
+                    st.info("Plan actualizado. (No marcaste ningún ejercicio como realizado).")
+            else:
+                st.error("Debes iniciar sesión para guardar.")

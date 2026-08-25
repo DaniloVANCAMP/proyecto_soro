@@ -2,7 +2,7 @@ import os
 import sys
 import streamlit as st
 import requests
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 import database as db
 
 # Importamos nuestro motor matemático central
@@ -98,9 +98,11 @@ def mostrar(exercises=None):
     nombre = perfil.get('nombre', 'Atleta').split()[0]
     st.markdown(f"<div class='header-panel'>👋 Hola, {nombre}</div>", unsafe_allow_html=True)
 
-    # --- CLIMA REAL (Llamada a la API) ---
+    # --- CLIMA REAL Y FECHA EN HORA COLOMBIA (UTC-5) ---
     temp_real, hum_real = obtener_clima_cali()
-    hoy = datetime.now()
+    zona_colombia = timezone(timedelta(hours=-5))
+    hoy = datetime.now(zona_colombia)
+    
     dias = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
     meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
     
@@ -139,7 +141,7 @@ def mostrar(exercises=None):
     grasa_marina = calc.calcular_grasa_marina(genero, altura, cuello, cintura, cadera)
     texto_grasa = f"{grasa_marina:.1f}%" if grasa_marina > 0 else "Sin datos"
     
-    registro_hoy = db.obtener_nutricion(user_id, date.today().strftime("%Y-%m-%d")) or {}
+    registro_hoy = db.obtener_nutricion(user_id, hoy.strftime("%Y-%m-%d")) or {}
     agua_consumida = float(registro_hoy.get("hidratacion_suplementos", {}).get("agua_litros", 0.0))
     calorias_consumidas = int(registro_hoy.get("totales", {}).get("cal", 0))
 

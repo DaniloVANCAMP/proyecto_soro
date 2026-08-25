@@ -1,5 +1,5 @@
 import os
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 import pandas as pd
 import streamlit as st
 
@@ -72,6 +72,10 @@ def mostrar():
     medidas = perfil.get("medidas", {})
     nombre_atleta = perfil.get("nombre", "Usuario ML")
 
+    # HORA COLOMBIA (UTC -5)
+    zona_colombia = timezone(timedelta(hours=-5))
+    hoy_colombia = datetime.now(zona_colombia).date()
+
     col1, col2 = st.columns(2)
     with col1:
         tipo_vista = st.radio(
@@ -80,7 +84,7 @@ def mostrar():
             horizontal=True,
         )
     with col2:
-        fecha_ref = st.date_input("Selecciona una fecha de referencia:", date.today())
+        fecha_ref = st.date_input("Selecciona una fecha de referencia:", hoy_colombia)
 
     st.markdown(
         f"<div class='section-title'>🏋️‍♂️ Entrenamientos: {tipo_vista}</div>",

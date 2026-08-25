@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import database as db
 
 def mostrar(perfil):
@@ -136,6 +136,7 @@ def mostrar(perfil):
                 
             if guardar:
                 if user_id:
+                    zona_colombia = timezone(timedelta(hours=-5))
                     perfil_actualizado = perfil.copy()
                     perfil_actualizado["objetivo"] = nuevo_objetivo
                     perfil_actualizado["peso"] = nuevo_peso
@@ -150,7 +151,7 @@ def mostrar(perfil):
                         "pierna": nueva_pierna,
                         "pantorrilla": nueva_pantorrilla,
                         "fc_reposo": nueva_fc,
-                        "fecha_actualizacion": datetime.now().strftime("%Y-%m-%d %H:%M")
+                        "fecha_actualizacion": datetime.now(zona_colombia).strftime("%Y-%m-%d %H:%M")
                     }
                     
                     db.guardar_perfil(user_id, perfil_actualizado)
