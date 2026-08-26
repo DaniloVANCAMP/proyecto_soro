@@ -66,8 +66,9 @@ def mostrar_login(cookie_manager=None):
                             # 1. COOKIES: Guardar por 30 días para sobrevivir al cierre de app
                             if cookie_manager:
                                 exp_date = datetime.datetime.now() + datetime.timedelta(days=30)
-                                cookie_manager.set("user_id", str(user_id), expires_at=exp_date)
-                                cookie_manager.set("username", str(username), expires_at=exp_date)
+                                # Se agregaron keys únicos para evitar el error de componentes duplicados
+                                cookie_manager.set("user_id", str(user_id), expires_at=exp_date, key="set_cookie_id")
+                                cookie_manager.set("username", str(username), expires_at=exp_date, key="set_cookie_name")
 
                             # 2. Memoria de sesión tradicional
                             st.session_state["logeado"] = True
