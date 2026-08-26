@@ -26,40 +26,29 @@ def obtener_ip_cliente():
     return None
 
 
-def obtener_bandera_pais(codigo_pais):
-    """Convierte un código ISO de país (ej. 'CO') en su emoji de bandera."""
-    if not codigo_pais or len(codigo_pais) != 2:
-        return "🌎"
-    return chr(ord(codigo_pais[0].upper()) + 127397) + chr(
-        ord(codigo_pais[1].upper()) + 127397
-    )
-
-
-@st.cache_data(ttl=1800)
+@st.cache_data(ttl=1800) # Se actualiza automáticamente cada 30 minutos
 def obtener_clima_dinamico(ip_cliente=None, ciudad_perfil=None):
-    """Detecta latitud/longitud por IP y consulta el clima real en Open-Meteo."""
-    lat, lon = 3.4372, -76.5225  # Coordenadas de respaldo (Cali)
-    nombre_ubicacion = "Cali, Colombia 🇨🇴"
+    """Detecta latitud/longitud por IP usando ipwhois.app y consulta el clima real en Open-Meteo."""
+    # Coordenadas por defecto (Centro de Colombia) solo para que Open-Meteo no tire error matemático
+    lat, lon = 4.5709, -74.2973 
+    
+    # Si falla la IP, mostrará la ciudad que guardó en su perfil, y si no, un texto neutro.
+    nombre_ubicacion = f"{ciudad_perfil} 📍" if ciudad_perfil else "Tu Ubicación 🌍"
 
-    # 1. Geolocalización automática por IP
+    # 1. Geolocalización automática por IP (Usando ipwhois que NO bloquea servidores en la nube)
     try:
-        url_ip = (
-            f"http://ip-api.com/json/{ip_cliente}"
-            if ip_cliente
-            else "http://ip-api.com/json/"
-        )
-        r_geo = requests.get(url_ip, timeout=3)
+        url_ip = f"https://ipwhois.app/json/{ip_cliente}" if ip_cliente else "https://ipwhois.app/json/"
+        r_geo = requests.get(url_ip, timeout=4)
         if r_geo.status_code == 200:
             data_geo = r_geo.json()
-            if data_geo.get("status") == "success":
-                lat = data_geo.get("lat", lat)
-                lon = data_geo.get("lon", lon)
-                ciudad = data_geo.get("city", "Tu Ubicación")
-                pais_code = data_geo.get("countryCode", "CO")
-                pais_nombre = data_geo.get("country", "Colombia")
-                nombre_ubicacion = (
-                    f"{ciudad}, {pais_nombre} {obtener_bandera_pais(pais_code)}"
-                )
+            if data_geo.get("success"):
+                lat = float(data_geo.get("latitude", lat))
+                lon = float(data_geo.get("longitude", lon))
+                ciudad = data_geo.get("city", "")
+                pais_nombre = data_geo.get("country", "")
+                
+                if ciudad and pais_nombre:
+                    nombre_ubicacion = f"{ciudad}, {pais_nombre} 📍"
     except Exception:
         pass
 
@@ -75,7 +64,7 @@ def obtener_clima_dinamico(ip_cliente=None, ciudad_perfil=None):
     except Exception:
         pass
 
-    return nombre_ubicacion, "25.0°C", "65%"
+    return nombre_ubicacion, "--°C", "--%"
 
 
 def mostrar(exercises=None):

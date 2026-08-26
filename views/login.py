@@ -1,8 +1,9 @@
 import streamlit as st
 import time
+import datetime
 import database as db
 
-def mostrar_login():
+def mostrar_login(cookie_manager=None):
     # --- CSS ESTILIZADO, SERIO Y PROFESIONAL ---
     st.markdown("""
     <style>
@@ -61,16 +62,24 @@ def mostrar_login():
                         
                         if user_id:
                             st.success("✅ Acceso autorizado. Cargando tu entorno...")
-                            # 1. Guardar en memoria de sesión
+                            
+                            # 1. COOKIES: Guardar por 30 días para sobrevivir al cierre de app
+                            if cookie_manager:
+                                exp_date = datetime.datetime.now() + datetime.timedelta(days=30)
+                                cookie_manager.set("user_id", str(user_id), expires_at=exp_date)
+                                cookie_manager.set("username", str(username), expires_at=exp_date)
+
+                            # 2. Memoria de sesión tradicional
                             st.session_state["logeado"] = True
                             st.session_state["user_id"] = user_id
                             st.session_state["username"] = username
                             
-                            # 2. PERSISTENCIA: Guardar en la URL para sobrevivir al F5
+                            # 3. Guardar en la URL como respaldo
                             st.query_params["user_id"] = str(user_id)
                             st.query_params["username"] = str(username)
                             
-                            time.sleep(1)
+                            # Pausa ligera para asegurar que la cookie se grabe antes de recargar
+                            time.sleep(1.5) 
                             st.rerun()
                         else:
                             st.error("❌ Credenciales incorrectas. Verifica tu usuario y contraseña.")

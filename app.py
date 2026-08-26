@@ -1,7 +1,9 @@
 import json
 import os
 import sys
+import datetime
 import streamlit as st
+import extra_streamlit_components as stx
 import database as db  # <-- IMPORTAMOS LA BASE DE DATOS AQUÍ
 
 # 1. ESTO DEBE SER OBLIGATORIAMENTE LO PRIMERO DE STREAMLIT
@@ -110,18 +112,36 @@ def check_perfil():
         return db.obtener_perfil(user_id)
     return None
 
+
+def get_cookie_manager():
+    """Inicia el controlador de cookies nativas sin caché para evitar choques de widgets"""
+    if "cookie_manager" not in st.session_state:
+        st.session_state.cookie_manager = stx.CookieManager()
+    return st.session_state.cookie_manager
+
 def main():
-    # 2. SALVAVIDAS ANTI-F5 (Login)
-    if "user_id" in st.query_params:
-        st.session_state["logeado"] = True
-        st.session_state["user_id"] = st.query_params["user_id"]
-        st.session_state["username"] = st.query_params.get("username", "Usuario")
+    cookie_manager = get_cookie_manager()
+
+    # 2. SALVAVIDAS Y COOKIES (Login Persistente 30 días)
+    cookie_user = cookie_manager.get(cookie="user_id")
+    cookie_name = cookie_manager.get(cookie="username")
 
     if "logeado" not in st.session_state:
         st.session_state["logeado"] = False
 
+    # Le damos prioridad a la Cookie del navegador por encima de la URL
+    if cookie_user:
+        st.session_state["logeado"] = True
+        st.session_state["user_id"] = cookie_user
+        st.session_state["username"] = cookie_name or "Usuario"
+    elif "user_id" in st.query_params:
+        st.session_state["logeado"] = True
+        st.session_state["user_id"] = st.query_params["user_id"]
+        st.session_state["username"] = st.query_params.get("username", "Usuario")
+
     if not st.session_state["logeado"]:
-        login.mostrar_login()
+        # Le enviamos el gestor de cookies al login para que las cree allí
+        login.mostrar_login(cookie_manager)
         return  
     
     try:
@@ -175,8 +195,10 @@ def main():
 
         st.sidebar.divider()
         
-        # 4. CERRAR SESIÓN
+        # 4. CERRAR SESIÓN DESTRUYENDO LAS COOKIES
         if st.sidebar.button("🚪 Cerrar Sesión", use_container_width=True):
+            cookie_manager.delete("user_id")
+            cookie_manager.delete("username")
             st.session_state.clear()
             st.query_params.clear()
             st.rerun()

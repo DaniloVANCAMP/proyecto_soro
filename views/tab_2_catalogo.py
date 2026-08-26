@@ -332,34 +332,22 @@ def mostrar(exercises_param=None, base_media_url_param=None):
         "Resistencia",
         "Pérdida de Peso",
     ]
+    opciones_dias = [1, 2, 3, 4, 5, 6, 7]
 
-    # Cargar valores guardados en Firebase si no se han inicializado en la sesión
-    if (
-        "config_cargada_user" not in st.session_state
-        or st.session_state.config_cargada_user != user_id
-    ):
-        lugar_saved = config_firebase.get(
-            "lugar", st.query_params.get("lugar", opciones_perfil[0])
-        )
-        st.session_state.config_lugar_main = (
-            lugar_saved if lugar_saved in opciones_perfil else opciones_perfil[0]
-        )
+    # 1. LEER DATOS DIRECTOS DE FIREBASE
+    dias_saved = int(config_firebase.get("dias", 4))
+    obj_saved = config_firebase.get("objetivo", "Hipertrofia")
+    lugar_saved = config_firebase.get("lugar", opciones_perfil[0])
 
-        dias_saved = config_firebase.get(
-            "dias", int(st.query_params.get("dias", 4))
-        )
-        st.session_state.config_dias = (
-            dias_saved if 1 <= dias_saved <= 7 else 4
-        )
-
-        obj_saved = config_firebase.get(
-            "objetivo", st.query_params.get("obj", "Hipertrofia")
-        )
-        st.session_state.config_objetivo = (
-            obj_saved if obj_saved in opciones_obj else opciones_obj[0]
-        )
-
-        st.session_state.config_cargada_user = user_id
+    # 2. CALCULAR LOS ÍNDICES EXACTOS PARA FORZAR LA UI
+    try: idx_lugar = opciones_perfil.index(lugar_saved)
+    except ValueError: idx_lugar = 0
+    
+    try: idx_obj = opciones_obj.index(obj_saved)
+    except ValueError: idx_obj = 0
+    
+    try: idx_dias = opciones_dias.index(dias_saved)
+    except ValueError: idx_dias = 3 
 
     def actualizar_memoria_y_firebase():
         st.query_params["lugar"] = st.session_state.config_lugar_main
@@ -375,6 +363,7 @@ def mostrar(exercises_param=None, base_media_url_param=None):
         perfil_elegido = st.selectbox(
             "Lugar de entrenamiento activo:",
             opciones_perfil,
+            index=idx_lugar,  # <- AQUÍ INYECTAMOS EL ÍNDICE
             key="config_lugar_main",
             on_change=actualizar_memoria_y_firebase,
         )
@@ -386,7 +375,8 @@ def mostrar(exercises_param=None, base_media_url_param=None):
 
         dias_entreno = st.radio(
             "dias_entreno_radio",
-            options=[1, 2, 3, 4, 5, 6, 7],
+            options=opciones_dias,
+            index=idx_dias,  # <- AQUÍ INYECTAMOS EL ÍNDICE
             horizontal=True,
             label_visibility="collapsed",
             key="config_dias",
@@ -467,6 +457,7 @@ def mostrar(exercises_param=None, base_media_url_param=None):
         objetivo = st.selectbox(
             "Objetivo:",
             opciones_obj,
+            index=idx_obj, # <- AQUÍ INYECTAMOS EL ÍNDICE
             key="config_objetivo",
             on_change=actualizar_memoria_y_firebase,
         )

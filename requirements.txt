@@ -16,6 +16,7 @@ firebase-admin
 google-generativeai
 pillow
 plotly
+extra-streamlit-components
 
 #python -m streamlit run app.py
 # OJO FALTA VERIFICACION INICIAL(verificación oficial)

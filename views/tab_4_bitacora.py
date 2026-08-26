@@ -65,7 +65,7 @@ def mostrar():
 
     user_id_actual = st.session_state.get("user_id")
     if not user_id_actual:
-        st.warning("⚠️ Inicia sesión para consultar tus registros de entrenamiento.")
+        st.warning("⚠️ Inicia sesión para consultar tus registros.")
         return
 
     perfil = cargar_perfil()
@@ -87,41 +87,54 @@ def mostrar():
         fecha_ref = st.date_input("Selecciona una fecha de referencia:", hoy_colombia)
 
     st.markdown(
-        f"<div class='section-title'>🏋️‍♂️ Entrenamientos: {tipo_vista}</div>",
+        f"<div class='section-title'>🏋️‍♂️ Registro: {tipo_vista}</div>",
         unsafe_allow_html=True,
     )
 
     todos_los_datos = cargar_bitacora_microdatos()
 
-    # FILTRO SEGURO Y RIGUROSO: Solo datos pertenecientes al usuario actual y excluyendo registros netos de comida
-    datos_del_usuario = []
+    # 1. EXTRAER SÓLO LOS ENTRENAMIENTOS REALES DEL USUARIO
+    entrenamientos_firebase = []
     for d in todos_los_datos:
         uid_doc = d.get("user_id")
         if uid_doc is not None and str(uid_doc) == str(user_id_actual):
-            # Garantiza que sea un entrenamiento (tenga objeto ejercicio o métricas de sesión)
             if d.get("ejercicio") or d.get("metrica_sesion"):
-                datos_del_usuario.append(d)
+                entrenamientos_firebase.append(d)
 
-    datos_filtrados = []
+    # 2. DEFINIR LAS FECHAS A CONSULTAR SEGÚN LA VISTA
+    fechas_objetivo = []
     if tipo_vista == "Un Día Específico":
-        fecha_str = fecha_ref.strftime("%Y-%m-%d")
-        datos_filtrados = [
-            d
-            for d in datos_del_usuario
-            if (d.get("timestamp") or "").startswith(fecha_str)
-        ]
+        fechas_objetivo.append(fecha_ref.strftime("%Y-%m-%d"))
     else:
         inicio_semana = fecha_ref - timedelta(days=fecha_ref.weekday())
-        fin_semana = inicio_semana + timedelta(days=6)
-        for d in datos_del_usuario:
-            ts = (d.get("timestamp") or "")[:10]
-            if ts:
-                try:
-                    fecha_d = datetime.strptime(ts, "%Y-%m-%d").date()
-                    if inicio_semana <= fecha_d <= fin_semana:
-                        datos_filtrados.append(d)
-                except ValueError:
-                    pass
+        fechas_objetivo = [(inicio_semana + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
+
+    # 3. MEZCLAR ENTRENAMIENTOS + DÍAS DE DESCANSO INTELIGENTES
+    datos_filtrados = []
+    for fecha_str in fechas_objetivo:
+        # Evitar llenar días del futuro con "Descanso" si estamos a mitad de semana
+        fecha_obj = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+        if fecha_obj > hoy_colombia:
+            continue
+            
+        entrenos_del_dia = [
+            d for d in entrenamientos_firebase 
+            if (d.get("timestamp") or "").startswith(fecha_str)
+        ]
+        
+        if entrenos_del_dia:
+            datos_filtrados.extend(entrenos_del_dia)
+        else:
+            # Si NO hubo entreno, registramos explícitamente un día de descanso
+            registro_descanso = {
+                "timestamp": f"{fecha_str}T12:00:00",
+                "user_id": user_id_actual,
+                "contexto_ambiental": {"lugar_entrenamiento": "Descanso", "equipamiento": "N/A"},
+                "metrica_sesion": {"objetivo_entrenamiento": "Recuperación"},
+                "ejercicio": {"nombre": "Descanso 🛋️", "musculo_objetivo": "N/A"},
+                "ejecucion": {"series": 0, "reps": 0, "peso_levantado_kg": 0.0, "esfuerzo_rpe": 0}
+            }
+            datos_filtrados.append(registro_descanso)
 
     tab_resumen, tab_detalle = st.tabs(["📊 Resumen", "🔬 Microdatos (Detalle)"])
 
@@ -131,7 +144,7 @@ def mostrar():
         )
         if not datos_filtrados:
             st.warning(
-                f"No hay entrenamientos registrados para la fecha o semana seleccionada ({fecha_ref})."
+                f"No hay registros para la fecha o semana seleccionada ({fecha_ref})."
             )
         else:
             filas_resumen = []
@@ -147,7 +160,7 @@ def mostrar():
                     "Fecha": (d.get("timestamp") or "")[:10],
                     "Lugar": ctx.get("lugar_entrenamiento") or "No Registrado",
                     "Objetivo": met.get("objetivo_entrenamiento") or "Planificación Manual",
-                    "Ejercicio": nombre_ejercicio,
+                    "Actividad": nombre_ejercicio,
                     "Músculo": ej.get("musculo_objetivo") or "N/A",
                     "Series": ejec.get("series") or 0,
                     "Reps": ejec.get("reps") or 0,
@@ -174,7 +187,7 @@ def mostrar():
                 # LA FECHA DE CRUCE PARA EL MERGE
                 fecha_str = (d.get("timestamp") or "")[:10]
 
-                # EXTRACCIÓN CORRECTA DE LA RUTA EN FIREBASE
+                # EXTRACCIÓN CORRECTA DE LA RUTA DE NUTRICIÓN EN FIREBASE
                 nutricion_hoy = db.obtener_nutricion(user_id_actual, fecha_str) or {}
                 totales_nut = nutricion_hoy.get("totales") or {}
                 
